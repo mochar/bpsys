@@ -1,6 +1,8 @@
 from PySide import QtCore, QtGui
 import pyqtgraph
 
+from .central_widget import CentralWidget
+
 
 class OpenFileDialog(QtGui.QDialog):
     def __init__(self, parent):
@@ -11,7 +13,7 @@ class OpenFileDialog(QtGui.QDialog):
     def set_up(self):
         # Open proteinGroups.txt layout
         open_layout = QtGui.QHBoxLayout()
-        self.file_path = QtGui.QLineEdit()
+        self.file_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/AMO-B_test/proteinGroups.txt')
         browse_button = QtGui.QPushButton('Browse...')
         browse_button.clicked.connect(self.show_filebrowser)
         open_layout.addWidget(QtGui.QLabel('proteinGroups.txt'))
@@ -44,8 +46,9 @@ class OpenFileDialog(QtGui.QDialog):
 
 
 class MainWindow(QtGui.QMainWindow):
-    def __init__(self):
+    def __init__(self, analysis):
         super(MainWindow, self).__init__()
+        self.analysis = analysis
         self.set_up()
         
         self.setGeometry(300, 300, 800, 450)
@@ -76,3 +79,6 @@ class MainWindow(QtGui.QMainWindow):
         file_path, ok = OpenFileDialog.get_file_data(self)
         if ok:
             self.statusBar().showMessage(file_path)
+            self.analysis.load_data(file_path)
+            central_widget = CentralWidget(self.analysis, self)
+            self.setCentralWidget(central_widget)
