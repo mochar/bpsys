@@ -18,13 +18,16 @@ class Analysis(object):
     def _find_column_names(self, file_path):
         headers = list(pd.read_table(file_path, index_col=0, nrows=1))
         ratios = [header for header in headers if header.startswith('Ratio H/L normalized ')]
+        self.samples = [ratio.split()[-1] for ratio in ratios] # X, Y, Z
         ratios = {header: 'ratio_{}'.format(header.split()[-1]) for header in ratios}
+        intensities = [header for header in headers if header.startswith('Intensity ')]
+        intensities = {header: 'intensity_{}'.format(header.split()[-1]) for header in intensities}
         columns = {'Reverse': 'Reverse', 
                    'Majority protein IDs': 'protein_ids', 
                    'id': 'id',
-                   'Intensity': 'intensity',
                    'Potential contaminant': 'contaminant'}
         columns.update(ratios)
+        columns.update(intensities)
         if 'Potential contaminant' in headers:
             columns.update({'Potential contaminant': 'contaminant'})
         if 'Contaminant' in headers:
@@ -42,11 +45,9 @@ class Analysis(object):
         self.protein_groups = self.protein_groups[self.protein_groups.Reverse != '+']
         self.protein_groups = self.protein_groups[self.protein_groups.contaminant != '+']
         for column in columns.values():
-            if not column.startswith('ratio'):
-                continue
+            if not column.startswith('ratio'): continue
             self.protein_groups = self.protein_groups[pd.notnull(self.protein_groups[column])]
             self.protein_groups['log_{}'.format(column)] = np.log2(self.protein_groups[column])
-            
         self.protein_groups.drop('Reverse', axis=1, inplace=True)
         self.protein_groups.drop('contaminant', axis=1, inplace=True)
     
