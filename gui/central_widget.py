@@ -37,17 +37,44 @@ class CentralWidget(QtGui.QWidget):
         self.setLayout(layout)
         
         # Table
-        table_view = QtGui.QTableView(self)
-        table_view.setModel(PandasModel(self.analysis.protein_groups))
-        layout.addWidget(table_view)
+        self.table_view = QtGui.QTableView(self)
+        self.load_table()
+        layout.addWidget(self.table_view)
         layout.addWidget(QtGui.QWidget())
         
         # Graph
-        self.plot_widget = pg.PlotWidget(self, left='Log ratio')
-        graph_layout = QtGui.QVBoxLayout()
-        graph_layout.addWidget(self.plot_widget)
-        graph_layout.addSpacing(1)
-        layout.addLayout(graph_layout)
+        self.plot_widget = pg.PlotWidget(self, left='Ratio')
+        
+        # Significance
+        form_layout = QtGui.QHBoxLayout()
+        values_layout = QtGui.QFormLayout()
+        self.bin_size_edit = QtGui.QLineEdit('300')
+        self.p_value_edit = QtGui.QLineEdit('0.05')
+        filter_button = QtGui.QPushButton('Filter')
+        filter_button.clicked.connect(self.filter)
+        values_layout.addRow('Bin size', self.bin_size_edit)
+        values_layout.addRow('P-value cutoff', self.p_value_edit)
+        form_layout.addLayout(values_layout)
+        form_layout.addWidget(filter_button)
+        
+        # Graph and significane-B in the same vertical box
+        right_layout = QtGui.QVBoxLayout()
+        right_layout.addWidget(self.plot_widget)
+        right_layout.addLayout(form_layout)
+        layout.addLayout(right_layout)
+        
+    def load_table(self):
+        self.table_view.setModel(PandasModel(self.analysis.protein_groups))
     
     def plot_data(self):
-        self.plot_widget.plot(self.analysis.protein_groups.log_ratio)
+        ratios = self.analysis.protein_groups[[c for c in self.analysis.protein_groups if c.startswith('log')]]
+        colors = ['b', 'r', 'g']
+        for column, color in zip(ratios, colors):
+            data = self.analysis.protein_groups[column].sort_values()
+            plot_item = self.plot_widget.plot(data.values, pen=pg.mkPen(color, width=2))
+
+    def filter(self):
+        bin_size = int(self.bin_size_edit.text())
+        p_value = float(self.p_value_edit.text())
+        self.analysis.find_significant(p_value, bin_size)
+        self.load_table()

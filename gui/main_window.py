@@ -13,7 +13,7 @@ class OpenFileDialog(QtGui.QDialog):
     def set_up(self):
         # Open proteinGroups.txt layout
         open_layout = QtGui.QHBoxLayout()
-        self.file_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/AMO-B_test/proteinGroups.txt')
+        self.file_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/xyz_proteinGroups.txt')
         browse_button = QtGui.QPushButton('Browse...')
         browse_button.clicked.connect(self.show_filebrowser)
         open_layout.addWidget(QtGui.QLabel('proteinGroups.txt'))
