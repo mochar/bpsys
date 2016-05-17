@@ -20,8 +20,8 @@ class Analysis(object):
         ratios = [header for header in headers if header.startswith('Ratio H/L normalized ')]
         self.samples = [ratio.split()[-1] for ratio in ratios] # X, Y, Z
         ratios = {header: 'ratio_{}'.format(header.split()[-1]) for header in ratios}
-        intensities = [header for header in headers if header.startswith('Intensity ')]
-        intensities = {header: 'intensity_{}'.format(header.split()[-1]) for header in intensities}
+        intensities = {'Intensity {}'.format(sample): 'intensity_{}'.format(sample) 
+                       for sample in self.samples}
         columns = {'Reverse': 'Reverse', 
                    'Majority protein IDs': 'protein_ids', 
                    'id': 'id',
