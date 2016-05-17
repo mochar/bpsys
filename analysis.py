@@ -60,24 +60,21 @@ class Analysis(object):
                 z = (r_0 - log_ratio) / (r_0 - r_min_1)
             return 0.5 * math.erfc(z / math.sqrt(2))
     
-        def bin_p(bin):
-            for column in bin:
-                if not column.startswith('log_ratio'):
-                    continue
-                group = column.split('log_ratio_')[-1]
-                log_ratio = bin[column]
-                limits = self.limits(log_ratio)
-                bin['p_{}'.format(group)] = log_ratio.apply(p, args=(limits,))
+        def bin_p(bin, sample):
+            log_ratio = bin['log_ratio_{}'.format(sample)]
+            limits = self.limits(log_ratio)
+            bin['p_{}'.format(sample)] = log_ratio.apply(p, args=(limits,))
             return bin
-         
+            
         self.bin_proteins(bin_size)
-        self.protein_groups = self.protein_groups.groupby('bin').apply(bin_p)
-        
+        for sample in self.samples:
+            bin_column = 'bin_{}'.format(sample)
+            self.protein_groups = self.protein_groups.groupby(bin_column).apply(bin_p, sample=sample)
+            self.protein_groups.drop(bin_column, axis=1, inplace=True)
         significant = pd.DataFrame({c: self.protein_groups[c] <= p_value
                                     for c in self.protein_groups 
                                     if c.startswith('p_')}).any(axis=1)
         self.protein_groups['significant'] = significant
-        self.protein_groups.drop('bin', axis=1, inplace=True)
 
     def bin_proteins(self, bin_size):
         protein_count = len(self.protein_groups.index)
@@ -90,8 +87,9 @@ class Analysis(object):
                 size = bin_size + protein_count % bin_size
             bins.extend([i] * size)
 
-        self.protein_groups.sort_values('intensity', inplace=True)
-        self.protein_groups['bin'] = bins
+        for sample in self.samples:
+            self.protein_groups.sort_values('intensity_{}'.format(sample), inplace=True)
+            self.protein_groups['bin_{}'.format(sample)] = bins
         
     def limits(self, log_ratio):
         mean = log_ratio.mean()
