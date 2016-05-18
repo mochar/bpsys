@@ -79,11 +79,17 @@ class CentralWidget(QtGui.QWidget):
         
     def plot_data(self, sample):
         self.scatter_widget.clear()
-        self.scatter_widget.plot(
-            x=self.analysis.protein_groups['ratio_{}'.format(sample)],
-            y=self.analysis.protein_groups['intensity_{}'.format(sample)],
-            pen=None, symbolPen=None, symbolSize=7,
-            symbolBrush=(0, 0, 0, 50), antialias=False)
+        colors = ('b', 'r', 'y', 'g')
+        pgs = self.analysis.protein_groups
+        p_column = pgs['p_{}'.format(sample)]
+        data = (pgs[p_column > 0.05], pgs[p_column.between(0.01, 0.05)],
+                pgs[p_column.between(0.001, 0.01)], pgs[p_column < 0.001])
+        for color, points in zip(colors, data):
+            self.scatter_widget.plot(
+                x=points['ratio_{}'.format(sample)],
+                y=points['intensity_{}'.format(sample)],
+                pen=None, symbolPen=None, symbolSize=7,
+                symbolBrush=color, antialias=False)
 
     def filter(self):
         bin_size = int(self.bin_size_edit.text())

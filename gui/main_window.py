@@ -80,5 +80,6 @@ class MainWindow(QtGui.QMainWindow):
         if ok:
             self.statusBar().showMessage(file_path)
             self.analysis.load_data(file_path)
+            self.analysis.run()
             central_widget = CentralWidget(self.analysis, self)
             self.setCentralWidget(central_widget)

@@ -34,6 +34,9 @@ class Analysis(object):
             columns.update({'Contaminant': 'contaminant'})
         return columns
     
+    def run(self):
+        self.find_significant()
+    
     def load_data(self, file_path):
         columns = self._find_column_names(file_path)
         try:
