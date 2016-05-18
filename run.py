@@ -10,6 +10,7 @@ from analysis import Analysis
 if __name__ == '__main__':
     pg.setConfigOption('background', 'w')
     pg.setConfigOption('foreground', 'k')
+    pg.setConfigOptions(antialias=True)
 
     app = QtGui.QApplication([])
     gui = MainWindow(Analysis())
