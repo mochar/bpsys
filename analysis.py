@@ -10,10 +10,10 @@ from obo_parser import GODag
 
 
 class Analysis(object):
-    def __init__(self, file_path=None):
+    def __init__(self, pg_path=None):
         self.protein_groups = None
-        if file_path is not None:
-            self.load_data(file_path)
+        if pg_path is not None:
+            self.load_data(pg_path)
             
     def _find_column_names(self, file_path):
         headers = list(pd.read_table(file_path, index_col=0, nrows=1))
@@ -33,9 +33,15 @@ class Analysis(object):
         if 'Contaminant' in headers:
             columns.update({'Contaminant': 'contaminant'})
         return columns
-    
-    def run(self):
-        self.find_significant()
+        
+    def _map_protein_ids(self, id_regex):
+        regex = re.compile(id_regex)
+        d = {}
+        for id_, protein_ids in zip(self.protein_groups.id, self.protein_groups.protein_ids):
+            for protein_id in protein_ids.split(';'):
+                protein_id = regex.findall(protein_id)[0]
+                d[protein_id] = id_
+        return d
     
     def load_data(self, file_path):
         columns = self._find_column_names(file_path)
@@ -101,3 +107,11 @@ class Analysis(object):
         r_0 = ss.norm.ppf(0.5, loc=mean, scale=std)
         r_1 = ss.norm.ppf(0.8413, loc=mean, scale=std)
         return (r_min_1, r_0, r_1)
+
+    def load_associations(self, file_path, id_regex='.*'):
+        d = self._map_protein_ids(id_regex)
+        self.associations = pd.read_table(file_path, comment='!', header=None,
+            usecols=[1, 4, 8], names=['protein_id', 'go_id', 'class'])
+        self.associations.drop_duplicates(inplace=True)
+        self.associations = self.associations[self.associations.protein_id.isin(d.keys())]
+        self.associations.protein_id = self.associations.protein_id.apply(lambda x: d[x])

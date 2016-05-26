@@ -94,8 +94,13 @@ class StartAnalysisDialog(QtGui.QDialog):
     def get_parameters(parent):
         dialog = StartAnalysisDialog(parent)
         result = dialog.exec_()
-        file_path = dialog.pg_path.text()
-        return (file_path, result == QtGui.QDialog.Accepted)
+        parameters = {
+            'pg_path': dialog.pg_path.text(),
+            'ass_path': dialog.ass_path.text(),
+            'bin_size': dialog.bin_size_edit.text(),
+            'p_value': dialog.p_value_edit.text()
+        }
+        return (parameters, result == QtGui.QDialog.Accepted)
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -129,10 +134,11 @@ class MainWindow(QtGui.QMainWindow):
         file_menu.addAction(open_action)
 
     def load_file(self):
-        file_path, ok = StartAnalysisDialog.get_parameters(self)
+        parameters, ok = StartAnalysisDialog.get_parameters(self)
         if ok:
-            self.statusBar().showMessage(file_path)
-            self.analysis.load_data(file_path)
-            self.analysis.run()
+            self.statusBar().showMessage(parameters['pg_path'])
+            self.analysis.load_data(parameters['pg_path'])
+            self.analysis.find_significant()
+            # self.analysis.load_associations(parameters['ass_path'])
             central_widget = CentralWidget(self.analysis, self)
             self.setCentralWidget(central_widget)
