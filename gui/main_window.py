@@ -4,21 +4,18 @@ import pyqtgraph
 from .central_widget import CentralWidget
 
 
-class OpenFileDialog(QtGui.QDialog):
+class StartAnalysisDialog(QtGui.QDialog):
     def __init__(self, parent):
-        super(OpenFileDialog, self).__init__(parent=parent)
+        super(StartAnalysisDialog, self).__init__(parent=parent)
         self.set_up()
-        self.show()
         
     def set_up(self):
-        # Open proteinGroups.txt layout
-        open_layout = QtGui.QHBoxLayout()
-        self.file_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/xyz_proteinGroups.txt')
-        browse_button = QtGui.QPushButton('Browse...')
-        browse_button.clicked.connect(self.show_filebrowser)
-        open_layout.addWidget(QtGui.QLabel('proteinGroups.txt'))
-        open_layout.addWidget(self.file_path)
-        open_layout.addWidget(browse_button)
+        self.layout = QtGui.QVBoxLayout()
+        self.setLayout(self.layout)
+        
+        self.set_up_files()
+        self.set_up_significance()
+        self.set_up_go()
         
         # Dialog buttons
         buttons = QtGui.QDialogButtonBox(
@@ -26,22 +23,78 @@ class OpenFileDialog(QtGui.QDialog):
             QtCore.Qt.Horizontal, self)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
+        self.layout.addWidget(buttons)
         
-        # Main layout
+    def set_up_files(self):
+        group_box = QtGui.QGroupBox('Bestanden')
+        self.layout.addWidget(group_box)
         layout = QtGui.QVBoxLayout()
-        layout.addLayout(open_layout)
-        layout.addWidget(buttons)
-        self.setLayout(layout)
+        group_box.setLayout(layout)
         
-    def show_filebrowser(self):
-        file_path, _ = QtGui.QFileDialog().getOpenFileName(self)
-        self.file_path.setText(file_path)
+        # proteinGroups.txt
+        pg_layout = QtGui.QHBoxLayout()
+        self.pg_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/xyz_proteinGroups.txt')
+        browse_button = QtGui.QPushButton('Browse...')
+        browse_button.clicked.connect(lambda: self.pg_path.setText(QtGui.QFileDialog().getOpenFileName()))
+        pg_layout.addWidget(QtGui.QLabel('proteinGroups.txt'))
+        pg_layout.addWidget(self.pg_path)
+        pg_layout.addWidget(browse_button)
+        layout.addLayout(pg_layout)
+        
+        # Association table uniprot
+        ass_layout = QtGui.QHBoxLayout()
+        self.ass_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/go/gene_association.goa_human')
+        browse_button = QtGui.QPushButton('Browse...')
+        browse_button.clicked.connect(lambda: self.ass_path.setText(QtGui.QFileDialog().getOpenFileName()))
+        ass_layout.addWidget(QtGui.QLabel('Associations'))
+        ass_layout.addWidget(self.ass_path)
+        ass_layout.addWidget(browse_button)
+        layout.addLayout(ass_layout)
+        
+    def set_up_significance(self):
+        group_box = QtGui.QGroupBox('Significantie')
+        self.layout.addWidget(group_box)
+        layout = QtGui.QHBoxLayout()
+        tab_widget = QtGui.QTabWidget()
+        layout.addWidget(tab_widget)
+        group_box.setLayout(layout)
+        
+        # Significance A
+        sig_a_widget = QtGui.QWidget()
+        sig_a_layout = QtGui.QFormLayout()
+        sig_a_widget.setLayout(sig_a_layout)
+        
+        self.p_value_edit = QtGui.QLineEdit('0.05')
+        sig_a_layout.addRow('P-value cutoff', self.p_value_edit)
+        
+        tab_widget.addTab(sig_a_widget, 'Significance-A')
+        
+        # Significance B
+        sig_b_widget = QtGui.QWidget()
+        sig_b_layout = QtGui.QFormLayout()
+        sig_b_widget.setLayout(sig_b_layout)
+        
+        self.bin_size_edit = QtGui.QLineEdit('300')
+        sig_b_layout.addRow('Bin size', self.bin_size_edit)
+        sig_b_layout.addRow('P-value cutoff', self.p_value_edit)
+        
+        tab_widget.addTab(sig_b_widget, 'Significance-B')
+        
+        # Cut-off
+        cut_off_widget = QtGui.QWidget()
+        tab_widget.addTab(cut_off_widget, 'Cut-off')
+    
+    def set_up_go(self):
+        group_box = QtGui.QGroupBox('GO Enrichment')
+        self.layout.addWidget(group_box)
+        layout = QtGui.QVBoxLayout()
+        group_box.setLayout(layout)
     
     @staticmethod
-    def get_file_data(parent):
-        dialog = OpenFileDialog(parent)
+    def get_parameters(parent):
+        dialog = StartAnalysisDialog(parent)
         result = dialog.exec_()
-        file_path = dialog.file_path.text()
+        file_path = dialog.pg_path.text()
         return (file_path, result == QtGui.QDialog.Accepted)
 
 
@@ -76,7 +129,7 @@ class MainWindow(QtGui.QMainWindow):
         file_menu.addAction(open_action)
 
     def load_file(self):
-        file_path, ok = OpenFileDialog.get_file_data(self)
+        file_path, ok = StartAnalysisDialog.get_parameters(self)
         if ok:
             self.statusBar().showMessage(file_path)
             self.analysis.load_data(file_path)
