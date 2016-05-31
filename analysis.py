@@ -12,6 +12,10 @@ from obo_parser import GODag
 class Analysis(object):
     def __init__(self, pg_path=None):
         self.protein_groups = None
+        self.bin_size = 300
+        self.p_value = 0.05
+        self.p_value_go = 0.05
+        self.ontology = 'Molecular function'
         if pg_path is not None:
             self.load_data(pg_path)
             
@@ -59,8 +63,16 @@ class Analysis(object):
             self.protein_groups['log_{}'.format(column)] = np.log2(self.protein_groups[column])
         self.protein_groups.drop('Reverse', axis=1, inplace=True)
         self.protein_groups.drop('contaminant', axis=1, inplace=True)
+
+    def load_associations(self, file_path, id_regex='.*'):
+        d = self._map_protein_ids(id_regex)
+        self.associations = pd.read_table(file_path, comment='!', header=None,
+            usecols=[1, 4, 8], names=['protein_id', 'go_id', 'class'])
+        self.associations.drop_duplicates(inplace=True)
+        self.associations = self.associations[self.associations.protein_id.isin(d.keys())]
+        self.associations.protein_id = self.associations.protein_id.apply(lambda x: d[x])
     
-    def find_significant(self, p_value=0.05, bin_size=300):
+    def find_significant(self):
         def p(log_ratio, limits):
             r_min_1, r_0, r_1 = limits
             if log_ratio > r_0:
@@ -75,12 +87,12 @@ class Analysis(object):
             bin['p_{}'.format(sample)] = log_ratio.apply(p, args=(limits,))
             return bin
             
-        self.bin_proteins(bin_size)
+        self.bin_proteins(self.bin_size)
         for sample in self.samples:
             bin_column = 'bin_{}'.format(sample)
             self.protein_groups = self.protein_groups.groupby(bin_column).apply(bin_p, sample=sample)
             self.protein_groups.drop(bin_column, axis=1, inplace=True)
-        significant = pd.DataFrame({c: self.protein_groups[c] <= p_value
+        significant = pd.DataFrame({c: self.protein_groups[c] <= self.p_value
                                     for c in self.protein_groups 
                                     if c.startswith('p_')}).any(axis=1)
         self.protein_groups['significant'] = significant
@@ -107,11 +119,3 @@ class Analysis(object):
         r_0 = ss.norm.ppf(0.5, loc=mean, scale=std)
         r_1 = ss.norm.ppf(0.8413, loc=mean, scale=std)
         return (r_min_1, r_0, r_1)
-
-    def load_associations(self, file_path, id_regex='.*'):
-        d = self._map_protein_ids(id_regex)
-        self.associations = pd.read_table(file_path, comment='!', header=None,
-            usecols=[1, 4, 8], names=['protein_id', 'go_id', 'class'])
-        self.associations.drop_duplicates(inplace=True)
-        self.associations = self.associations[self.associations.protein_id.isin(d.keys())]
-        self.associations.protein_id = self.associations.protein_id.apply(lambda x: d[x])

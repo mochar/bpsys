@@ -13,9 +13,10 @@ class StartAnalysisDialog(QtGui.QDialog):
         self.layout = QtGui.QVBoxLayout()
         self.setLayout(self.layout)
         
-        self.set_up_files()
+        self.set_up_protein_groups()
         self.set_up_significance()
         self.set_up_go()
+        self.set_up_cluster()
         
         # Dialog buttons
         buttons = QtGui.QDialogButtonBox(
@@ -25,8 +26,8 @@ class StartAnalysisDialog(QtGui.QDialog):
         buttons.rejected.connect(self.reject)
         self.layout.addWidget(buttons)
         
-    def set_up_files(self):
-        group_box = QtGui.QGroupBox('Bestanden')
+    def set_up_protein_groups(self):
+        group_box = QtGui.QGroupBox('Protein groups')
         self.layout.addWidget(group_box)
         layout = QtGui.QVBoxLayout()
         group_box.setLayout(layout)
@@ -34,12 +35,52 @@ class StartAnalysisDialog(QtGui.QDialog):
         # proteinGroups.txt
         pg_layout = QtGui.QHBoxLayout()
         self.pg_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/xyz_proteinGroups.txt')
+        self.pg_path.setPlaceholderText('proteinGroups.txt')
         browse_button = QtGui.QPushButton('Browse...')
         browse_button.clicked.connect(lambda: self.pg_path.setText(QtGui.QFileDialog().getOpenFileName()))
         pg_layout.addWidget(QtGui.QLabel('proteinGroups.txt'))
         pg_layout.addWidget(self.pg_path)
         pg_layout.addWidget(browse_button)
         layout.addLayout(pg_layout)
+        
+        # ID regex
+        re_layout = QtGui.QHBoxLayout()
+        self.id_regex = QtGui.QLineEdit('')
+        self.id_regex.setPlaceholderText('.*')
+        re_layout.addWidget(QtGui.QLabel('ID regex'))
+        re_layout.addWidget(self.id_regex)
+        layout.addLayout(re_layout)
+        
+    def set_up_significance(self):
+        group_box = QtGui.QGroupBox('Significantie')
+        self.layout.addWidget(group_box)
+        layout = QtGui.QVBoxLayout()
+        group_box.setLayout(layout)
+        
+        # Radio buttons
+        radio_layout = QtGui.QHBoxLayout()
+        self.sig_a_radio = QtGui.QRadioButton('Significance-A')
+        self.sig_a_radio.clicked.connect(lambda: self.bin_size_edit.setDisabled(True))
+        self.sig_b_radio = QtGui.QRadioButton('Significance-B')
+        self.sig_b_radio.setChecked(True)
+        self.sig_b_radio.clicked.connect(lambda: self.bin_size_edit.setDisabled(False))
+        radio_layout.addWidget(self.sig_a_radio)
+        radio_layout.addWidget(self.sig_b_radio)
+        layout.addLayout(radio_layout)
+        
+        # Widgets
+        form_layout = QtGui.QFormLayout()
+        self.p_value_edit = QtGui.QLineEdit('0.05')
+        form_layout.addRow('P-value', self.p_value_edit)
+        self.bin_size_edit = QtGui.QLineEdit('300')
+        form_layout.addRow('Bin size', self.bin_size_edit)
+        layout.addLayout(form_layout)
+    
+    def set_up_go(self):
+        group_box = QtGui.QGroupBox('GO Enrichment')
+        self.layout.addWidget(group_box)
+        layout = QtGui.QVBoxLayout()
+        group_box.setLayout(layout)
         
         # Association table uniprot
         ass_layout = QtGui.QHBoxLayout()
@@ -51,56 +92,34 @@ class StartAnalysisDialog(QtGui.QDialog):
         ass_layout.addWidget(browse_button)
         layout.addLayout(ass_layout)
         
-    def set_up_significance(self):
-        group_box = QtGui.QGroupBox('Significantie')
-        self.layout.addWidget(group_box)
-        layout = QtGui.QHBoxLayout()
-        tab_widget = QtGui.QTabWidget()
-        layout.addWidget(tab_widget)
-        group_box.setLayout(layout)
-        
-        # Significance A
-        sig_a_widget = QtGui.QWidget()
-        sig_a_layout = QtGui.QFormLayout()
-        sig_a_widget.setLayout(sig_a_layout)
-        
-        self.p_value_edit = QtGui.QLineEdit('0.05')
-        sig_a_layout.addRow('P-value cutoff', self.p_value_edit)
-        
-        tab_widget.addTab(sig_a_widget, 'Significance-A')
-        
-        # Significance B
-        sig_b_widget = QtGui.QWidget()
-        sig_b_layout = QtGui.QFormLayout()
-        sig_b_widget.setLayout(sig_b_layout)
-        
-        self.bin_size_edit = QtGui.QLineEdit('300')
-        sig_b_layout.addRow('Bin size', self.bin_size_edit)
-        sig_b_layout.addRow('P-value cutoff', self.p_value_edit)
-        
-        tab_widget.addTab(sig_b_widget, 'Significance-B')
-        
-        # Cut-off
-        cut_off_widget = QtGui.QWidget()
-        tab_widget.addTab(cut_off_widget, 'Cut-off')
+        # P-value
+        form_layout = QtGui.QFormLayout()
+        self.p_value_go_edit = QtGui.QLineEdit('0.05')
+        form_layout.addRow('P-value', self.p_value_go_edit)
+        self.go_combo = QtGui.QComboBox()
+        self.go_combo.addItem('Molecular function')
+        self.go_combo.addItem('Biological process')
+        self.go_combo.addItem('Cellulair location')
+        form_layout.addRow('Ontology', self.go_combo)
+        layout.addLayout(form_layout)
     
-    def set_up_go(self):
-        group_box = QtGui.QGroupBox('GO Enrichment')
+    def set_up_cluster(self):
+        group_box = QtGui.QGroupBox('Clusters')
         self.layout.addWidget(group_box)
         layout = QtGui.QVBoxLayout()
         group_box.setLayout(layout)
-    
+        
     @staticmethod
-    def get_parameters(parent):
+    def get_parameters(parent, analysis):
         dialog = StartAnalysisDialog(parent)
         result = dialog.exec_()
-        parameters = {
-            'pg_path': dialog.pg_path.text(),
-            'ass_path': dialog.ass_path.text(),
-            'bin_size': dialog.bin_size_edit.text(),
-            'p_value': dialog.p_value_edit.text()
-        }
-        return (parameters, result == QtGui.QDialog.Accepted)
+        analysis.load_data(dialog.pg_path.text())
+        analysis.load_associations(dialog.ass_path.text(), 
+                                   dialog.id_regex.text())
+        analysis.bin_size = int(dialog.bin_size_edit.text())
+        analysis.p_value = float(dialog.p_value_edit.text())
+        analysis.ontology = dialog.go_combo.currentText()
+        return (analysis, result == QtGui.QDialog.Accepted)
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -134,11 +153,9 @@ class MainWindow(QtGui.QMainWindow):
         file_menu.addAction(open_action)
 
     def load_file(self):
-        parameters, ok = StartAnalysisDialog.get_parameters(self)
+        self.analysis, ok = StartAnalysisDialog.get_parameters(self, self.analysis)
         if ok:
-            self.statusBar().showMessage(parameters['pg_path'])
-            self.analysis.load_data(parameters['pg_path'])
+            self.statusBar().showMessage(':^)')
             self.analysis.find_significant()
-            # self.analysis.load_associations(parameters['ass_path'])
             central_widget = CentralWidget(self.analysis, self)
             self.setCentralWidget(central_widget)
