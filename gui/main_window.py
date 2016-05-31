@@ -132,6 +132,8 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle('Proteomics')
         self.show()
         
+        self.start()
+        
     def set_up(self):
         self.init_menu()
         self.statusBar().showMessage('Ready')
@@ -147,12 +149,12 @@ class MainWindow(QtGui.QMainWindow):
         
         # File menu actions
         open_action = QtGui.QAction('Open', self)
-        open_action.triggered.connect(self.load_file)
+        open_action.triggered.connect(self.start)
         
         file_menu = menubar.addMenu('File')
         file_menu.addAction(open_action)
 
-    def load_file(self):
+    def start(self):
         self.analysis, ok = StartAnalysisDialog.get_parameters(self, self.analysis)
         if ok:
             self.statusBar().showMessage(':^)')
