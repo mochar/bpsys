@@ -163,4 +163,4 @@ class Analysis(object):
             _, p = ss.fisher_exact(table)
             if p <= self.p_value_go:
                 self.go_ids[go_id] = significant
-                yield (go_id, significant)
+            yield (go_id, significant)

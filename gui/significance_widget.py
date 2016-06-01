@@ -4,7 +4,7 @@ import pyqtgraph as pg
 
 class PandasModel(QtCore.QAbstractTableModel):
     def __init__(self, data, parent=None):
-        QtCore.QAbstractTableModel.__init__(self, parent)
+        super(PandasModel, self).__init__(parent=parent)
         self._data = data
 
     def rowCount(self, parent=None):
