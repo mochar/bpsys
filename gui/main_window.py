@@ -129,6 +129,7 @@ class StartAnalysisDialog(QtGui.QDialog):
         analysis.load_go_database(dialog.go_db_path.text())
         analysis.bin_size = int(dialog.bin_size_edit.text())
         analysis.p_value = float(dialog.p_value_edit.text())
+        analysis.p_value_go = float(dialog.p_value_go_edit.text())
         analysis.ontology = dialog.go_combo.currentText()
         return (analysis, result == QtGui.QDialog.Accepted)
 
@@ -169,6 +170,5 @@ class MainWindow(QtGui.QMainWindow):
         self.analysis, ok = StartAnalysisDialog.get_parameters(self, self.analysis)
         if ok:
             self.statusBar().showMessage(':^)')
-            # self.analysis.find_significant()
             central_widget = CentralWidget(self.analysis, self)
             self.setCentralWidget(central_widget)
