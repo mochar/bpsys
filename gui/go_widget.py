@@ -9,7 +9,8 @@ class GOWidget(QtGui.QWidget):
         self.set_up()
         
     def set_up(self):
-        layout = QtGui.QHBoxLayout()
+        layout = QtGui.QVBoxLayout()
         self.setLayout(layout)
  
-        layout.addWidget(QtGui.QLabel('Go terms'))
+        for go_id in self.analysis.go_ids:
+            layout.addWidget(QtGui.QLabel(go_id))

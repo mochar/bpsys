@@ -45,7 +45,7 @@ class StartAnalysisDialog(QtGui.QDialog):
         
         # ID regex
         re_layout = QtGui.QHBoxLayout()
-        self.id_regex = QtGui.QLineEdit('')
+        self.id_regex = QtGui.QLineEdit('\|(.+)\|')
         self.id_regex.setPlaceholderText('.*')
         re_layout.addWidget(QtGui.QLabel('ID regex'))
         re_layout.addWidget(self.id_regex)
@@ -139,7 +139,7 @@ class MainWindow(QtGui.QMainWindow):
         self.analysis = analysis
         self.set_up()
         
-        self.setGeometry(300, 300, 850, 450)
+        self.setGeometry(300, 500, 850, 450)
         self.setWindowTitle('Proteomics')
         self.show()
         

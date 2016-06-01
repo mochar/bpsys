@@ -17,6 +17,7 @@ class Analysis(object):
         self.p_value_go = 0.05
         self.ontology = 'Molecular function'
         self.go_dag = None
+        self.go_ids = {}
         if pg_path is not None:
             self.load_data(pg_path)
             
@@ -48,6 +49,13 @@ class Analysis(object):
                 d[protein_id] = id_
         return d
     
+    def _ontology_letter(self):
+        if self.ontology == 'Molecular function':
+            return 'F'
+        if self.ontology == 'Biological process':
+            return 'P'
+        return 'C'
+        
     def load_data(self, file_path):
         columns = self._find_column_names(file_path)
         try:
@@ -123,3 +131,32 @@ class Analysis(object):
         r_0 = ss.norm.ppf(0.5, loc=mean, scale=std)
         r_1 = ss.norm.ppf(0.8413, loc=mean, scale=std)
         return (r_min_1, r_0, r_1)
+        
+    def find_go_terms(self):
+        pgs = self.protein_groups # Easier to work with
+        associations = self.associations[self.associations['class'] == self._ontology_letter()]
+        significant_count = len(pgs[pgs.significant == True])
+
+        self.go_ids = {}
+        for go_id in pd.unique(associations.go_id.ravel()):
+            protein_ids = set(associations[associations.go_id == go_id].protein_id)
+            proteins = pgs[pgs.id.isin(protein_ids)]
+            
+            significant = proteins[proteins.significant == True]
+            if len(significant) == 0:
+                continue
+            
+            # Calculate the 2x2 table values for the fisher's exact test
+            significant_in_term = len(significant)
+            # not_significant_in_term = len(proteins[proteins.significant == False])
+            not_significant_in_term = len(proteins) - significant_in_term
+            table = [
+                [significant_in_term, significant_count - significant_in_term],
+                [not_significant_in_term, len(pgs) - significant_in_term]
+            ]
+            
+            # Calculate the fisher's exact test's p-value
+            _, p = ss.fisher_exact(table)
+            if p <= self.p_value_go:
+                self.go_ids[go_id] = significant
+        print(len(self.go_ids))

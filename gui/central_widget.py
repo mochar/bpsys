@@ -18,6 +18,7 @@ class AnalysisThread(QtCore.QThread):
     def run(self):
         self.analysis.find_significant()
         self.significance_done.emit()
+        self.analysis.find_go_terms()
         self.go_done.emit()
 
 
