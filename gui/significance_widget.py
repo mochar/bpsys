@@ -41,7 +41,7 @@ class SignificanceWidget(QtGui.QWidget):
         self.scatter_widget.setLabel('left', 'Intensity')
         self.scatter_widget.setLabel('bottom', 'Ratio')
         self.scatter_widget.setLogMode(x=True, y=True)
-               
+        
         # Tables
         self.tab_widget = QtGui.QTabWidget(self)
         self.tab_widget.setTabPosition(QtGui.QTabWidget.TabPosition.West)
@@ -52,27 +52,9 @@ class SignificanceWidget(QtGui.QWidget):
             table_view = QtGui.QTableView(self)
             table_view.setModel(PandasModel(self.analysis.protein_groups[columns]))
             self.tab_widget.addTab(table_view, sample)
+            
         layout.addWidget(self.tab_widget)
-        
-        # Significance
-        form_layout = QtGui.QHBoxLayout()
-        values_layout = QtGui.QFormLayout()
-        label = QtGui.QLabel('<font><p><strong>Significance-B</strong></p></font>')
-        self.bin_size_edit = QtGui.QLineEdit('300')
-        self.p_value_edit = QtGui.QLineEdit('0.05')
-        filter_button = QtGui.QPushButton('Filter')
-        # filter_button.clicked.connect(self.filter)
-        values_layout.addWidget(label)
-        values_layout.addRow('Bin size', self.bin_size_edit)
-        values_layout.addRow('P-value cutoff', self.p_value_edit)
-        form_layout.addLayout(values_layout)
-        form_layout.addWidget(filter_button)
-        
-        # Plot and significane-B in the same vertical box
-        right_layout = QtGui.QVBoxLayout()
-        right_layout.addWidget(self.scatter_widget, 3)
-        # right_layout.addLayout(form_layout, 1)
-        layout.addLayout(right_layout)
+        layout.addWidget(self.scatter_widget)
         
     def on_tab_change(self, tab_index):
         sample = self.analysis.samples[tab_index]
