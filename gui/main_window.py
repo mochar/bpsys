@@ -82,6 +82,16 @@ class StartAnalysisDialog(QtGui.QDialog):
         layout = QtGui.QVBoxLayout()
         group_box.setLayout(layout)
         
+        # GO DAG database
+        go_db_layout = QtGui.QHBoxLayout()
+        self.go_db_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/go/go-basic.obo')
+        browse_button = QtGui.QPushButton('Browse...')
+        browse_button.clicked.connect(lambda: self.go_db_path.setText(QtGui.QFileDialog().getOpenFileName()))
+        go_db_layout.addWidget(QtGui.QLabel('Database'))
+        go_db_layout.addWidget(self.go_db_path)
+        go_db_layout.addWidget(browse_button)
+        layout.addLayout(go_db_layout)
+        
         # Association table uniprot
         ass_layout = QtGui.QHBoxLayout()
         self.ass_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/go/gene_association.goa_human')
@@ -116,6 +126,7 @@ class StartAnalysisDialog(QtGui.QDialog):
         analysis.load_data(dialog.pg_path.text())
         analysis.load_associations(dialog.ass_path.text(), 
                                    dialog.id_regex.text())
+        analysis.load_go_database(dialog.go_db_path.text())
         analysis.bin_size = int(dialog.bin_size_edit.text())
         analysis.p_value = float(dialog.p_value_edit.text())
         analysis.ontology = dialog.go_combo.currentText()
@@ -158,6 +169,6 @@ class MainWindow(QtGui.QMainWindow):
         self.analysis, ok = StartAnalysisDialog.get_parameters(self, self.analysis)
         if ok:
             self.statusBar().showMessage(':^)')
-            self.analysis.find_significant()
+            # self.analysis.find_significant()
             central_widget = CentralWidget(self.analysis, self)
             self.setCentralWidget(central_widget)

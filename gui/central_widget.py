@@ -18,7 +18,6 @@ class AnalysisThread(QtCore.QThread):
     def run(self):
         self.analysis.find_significant()
         self.significance_done.emit()
-        self.sleep(3)
         self.go_done.emit()
 
 
@@ -50,7 +49,7 @@ class CentralWidget(QtGui.QWidget):
         current_tab = self.tab_widget.tabPosition()
         self.tab_widget.removeTab(0)
         self.tab_widget.insertTab(0, SignificanceWidget(analysis, self), 'Significantie')
-        
+            
     def set_go_tab(self):
         analysis = self.analysis_thread.analysis
         self.tab_widget.removeTab(1)

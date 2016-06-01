@@ -296,18 +296,13 @@ class GODag(dict):
 
     def load_obo_file(self, obo_file, optional_attrs):
 
-        print("load obo file %s" % obo_file, file=sys.stderr)
         reader = OBOReader(obo_file, optional_attrs)
         for rec in reader:
             self[rec.id] = rec
             for alt in rec.alt_ids:
                 self[alt] = rec
 
-        print("{OBO}: format-version({FMT}) data-version({REL})".format(
-            OBO=obo_file, FMT=reader.format_version, REL=reader.data_version))
-
         self.populate_terms()
-        print(len(self), "nodes imported", file=sys.stderr)
 
     def populate_terms(self):
 

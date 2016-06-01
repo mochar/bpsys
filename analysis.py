@@ -16,6 +16,7 @@ class Analysis(object):
         self.p_value = 0.05
         self.p_value_go = 0.05
         self.ontology = 'Molecular function'
+        self.go_dag = None
         if pg_path is not None:
             self.load_data(pg_path)
             
@@ -71,6 +72,9 @@ class Analysis(object):
         self.associations.drop_duplicates(inplace=True)
         self.associations = self.associations[self.associations.protein_id.isin(d.keys())]
         self.associations.protein_id = self.associations.protein_id.apply(lambda x: d[x])
+    
+    def load_go_database(self, file_path):
+        self.go_dag = GODag('../data/go/go-basic.obo')
     
     def find_significant(self):
         def p(log_ratio, limits):
