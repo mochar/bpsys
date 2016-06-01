@@ -133,6 +133,10 @@ class Analysis(object):
         return (r_min_1, r_0, r_1)
         
     def find_go_terms(self):
+        for _ in self.iterate_go_terms():
+            pass
+    
+    def iterate_go_terms(self):
         pgs = self.protein_groups # Easier to work with
         associations = self.associations[self.associations['class'] == self._ontology_letter()]
         significant_count = len(pgs[pgs.significant == True])
@@ -159,3 +163,4 @@ class Analysis(object):
             _, p = ss.fisher_exact(table)
             if p <= self.p_value_go:
                 self.go_ids[go_id] = significant
+                yield (go_id, significant)
