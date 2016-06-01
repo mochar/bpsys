@@ -49,17 +49,21 @@ class CentralWidget(QtGui.QWidget):
         self.tab_widget.addTab(self.cluster_widget, 'Clusters')
         layout.addWidget(self.tab_widget)
         
+    @QtCore.Slot(Analysis)
     def update_significance_tab(self, analysis):
         print('significance done')
         self.sig_widget.analysis = analysis
         self.sig_widget.set_up()
         self.parent().statusBar().showMessage('GO Enrichment Analyse uitvoeren...')
+        print('done!')
         
+    @QtCore.Slot(Analysis)
     def update_go_tab(self, analysis):
         print('go done')
         self.go_widget.analysis = analysis
         self.go_widget.set_up()
         self.parent().statusBar().showMessage('Clusters vinden...')
         
+    @QtCore.Slot()
     def done(self):
         self.parent().statusBar().showMessage('KLAAR!!!')
