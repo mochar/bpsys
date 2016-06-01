@@ -2,12 +2,11 @@ from PySide import QtCore, QtGui
 
 from .significance_widget import SignificanceWidget
 from .go_widget import GOWidget
-from analysis import Analysis
 
 
 class AnalysisThread(QtCore.QThread):
-    significance_done = QtCore.Signal(Analysis)
-    go_done = QtCore.Signal(Analysis)
+    significance_done = QtCore.Signal()
+    go_done = QtCore.Signal()
         
     def __init__(self, analysis):
         super(AnalysisThread, self).__init__()
@@ -18,17 +17,21 @@ class AnalysisThread(QtCore.QThread):
 
     def run(self):
         self.analysis.find_significant()
-        self.significance_done.emit(self.analysis)
+        self.significance_done.emit()
         self.analysis.find_go_terms()
-        self.go_done.emit(self.analysis)
+        self.go_done.emit()
 
 
 class CentralWidget(QtGui.QWidget):
     def __init__(self, analysis, parent):
         super(CentralWidget, self).__init__(parent=parent)
+        self.analysis = analysis
+        self.run_thread()
         self.set_up()
+        self.parent().statusBar().showMessage('Significantie uitvoeren...')
         
-        self.analysis_thread = AnalysisThread(analysis)
+    def run_thread(self):
+        self.analysis_thread = AnalysisThread(self.analysis)
         self.analysis_thread.significance_done.connect(
             self.update_significance_tab)
         self.analysis_thread.go_done.connect(
@@ -49,20 +52,21 @@ class CentralWidget(QtGui.QWidget):
         self.tab_widget.addTab(self.cluster_widget, 'Clusters')
         layout.addWidget(self.tab_widget)
         
-    @QtCore.Slot(Analysis)
-    def update_significance_tab(self, analysis):
-        print('significance done')
-        self.sig_widget.analysis = analysis
+    @QtCore.Slot()
+    def update_significance_tab(self):
+        print('significance setup')
+        self.sig_widget.analysis = self.analysis
         self.sig_widget.set_up()
         self.parent().statusBar().showMessage('GO Enrichment Analyse uitvoeren...')
-        print('done!')
+        print('significance done')
         
-    @QtCore.Slot(Analysis)
-    def update_go_tab(self, analysis):
-        print('go done')
-        self.go_widget.analysis = analysis
+    @QtCore.Slot()
+    def update_go_tab(self):
+        print('go setup')
+        self.go_widget.analysis = self.analysis
         self.go_widget.set_up()
         self.parent().statusBar().showMessage('Clusters vinden...')
+        print('go done')
         
     @QtCore.Slot()
     def done(self):
