@@ -26,10 +26,11 @@ class PandasModel(QtCore.QAbstractTableModel):
      
 
 class SignificanceWidget(QtGui.QWidget):
-    def __init__(self, analysis, parent):
+    def __init__(self,parent, analysis=None):
         super(SignificanceWidget, self).__init__(parent=parent)
         self.analysis = analysis
-        self.set_up()
+        if analysis is not None:
+            self.set_up()
         
     def set_up(self):
         layout = QtGui.QHBoxLayout()

@@ -2,11 +2,12 @@ from PySide import QtCore, QtGui
 
 from .significance_widget import SignificanceWidget
 from .go_widget import GOWidget
+from analysis import Analysis
 
 
 class AnalysisThread(QtCore.QThread):
-    significance_done = QtCore.Signal()
-    go_done = QtCore.Signal()
+    significance_done = QtCore.Signal(Analysis)
+    go_done = QtCore.Signal(Analysis)
         
     def __init__(self, analysis):
         super(AnalysisThread, self).__init__()
@@ -17,9 +18,9 @@ class AnalysisThread(QtCore.QThread):
 
     def run(self):
         self.analysis.find_significant()
-        self.significance_done.emit()
+        self.significance_done.emit(self.analysis)
         self.analysis.find_go_terms()
-        self.go_done.emit()
+        self.go_done.emit(self.analysis)
 
 
 class CentralWidget(QtGui.QWidget):
@@ -29,9 +30,9 @@ class CentralWidget(QtGui.QWidget):
         
         self.analysis_thread = AnalysisThread(analysis)
         self.analysis_thread.significance_done.connect(
-            self.set_significance_tab)
+            self.update_significance_tab)
         self.analysis_thread.go_done.connect(
-            self.set_go_tab)
+            self.update_go_tab)
         self.analysis_thread.finished.connect(self.done)
         self.analysis_thread.start()
         
@@ -40,21 +41,25 @@ class CentralWidget(QtGui.QWidget):
         self.setLayout(layout)
         
         self.tab_widget = QtGui.QTabWidget(self)
-        self.tab_widget.addTab(QtGui.QWidget(self), QtGui.QIcon('loading.gif'), 'Significantie')
-        self.tab_widget.addTab(QtGui.QWidget(self), QtGui.QIcon('loading.gif'), 'GO Enrichment')
-        self.tab_widget.addTab(QtGui.QWidget(self), QtGui.QIcon('loading.gif'), 'Cluster')
+        self.sig_widget = SignificanceWidget(self)
+        self.tab_widget.addTab(self.sig_widget, 'Significantie')
+        self.go_widget = GOWidget(self)
+        self.tab_widget.addTab(self.go_widget, 'GO Enrichment')
+        self.cluster_widget = QtGui.QWidget(self)
+        self.tab_widget.addTab(self.cluster_widget, 'Clusters')
         layout.addWidget(self.tab_widget)
         
-    def set_significance_tab(self):
-        analysis = self.analysis_thread.analysis
-        current_tab = self.tab_widget.tabPosition()
-        self.tab_widget.removeTab(0)
-        self.tab_widget.insertTab(0, SignificanceWidget(analysis, self), 'Significantie')
-            
-    def set_go_tab(self):
-        analysis = self.analysis_thread.analysis
-        self.tab_widget.removeTab(1)
-        self.tab_widget.insertTab(1, GOWidget(analysis, self), 'GO Enrichment')
+    def update_significance_tab(self, analysis):
+        print('significance done')
+        self.sig_widget.analysis = analysis
+        self.sig_widget.set_up()
+        self.parent().statusBar().showMessage('GO Enrichment Analyse uitvoeren...')
+        
+    def update_go_tab(self, analysis):
+        print('go done')
+        self.go_widget.analysis = analysis
+        self.go_widget.set_up()
+        self.parent().statusBar().showMessage('Clusters vinden...')
         
     def done(self):
-        QtGui.QMessageBox.information(self, 'Klaar!', 'KLAAR!!')
+        self.parent().statusBar().showMessage('KLAAR!!!')
