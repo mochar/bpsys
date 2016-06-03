@@ -1,4 +1,19 @@
+from collections import namedtuple
+
 from PySide import QtCore, QtGui
+from grandalf.graphs import Vertex, Edge, Graph
+from grandalf.layouts import SugiyamaLayout
+
+
+class DefaultView(object):
+    def __init__(self, w, h):
+        self.w, self.h = w, h
+
+
+class ViewVertex(Vertex):
+    def __init__(self, data, w, h):
+        super(ViewVertex, self).__init__(data)
+        self.view = DefaultView(w, h)
 
 
 class Node(QtGui.QGraphicsRectItem):
@@ -30,6 +45,9 @@ class GOWidget(QtGui.QWidget):
     def __init__(self, parent, analysis):
         super(GOWidget, self).__init__(parent=parent)
         self.analysis = analysis
+        self.node_size = (75, 50)
+        self.graph = self.create_graph()
+        self.sug = self.create_sug_layout()
         self.set_up()
         
     def set_up(self):
@@ -46,6 +64,39 @@ class GOWidget(QtGui.QWidget):
         widget = self.create_graph_widget()
         layout.addWidget(widget)
         
+    def find_all_terms(self):
+        all_ids = set()
+        for go_id in self.analysis.go_ids:
+        # for go_id in ['GO:0042605']:
+            all_ids.add(go_id)
+            term = self.analysis.go_dag.query_term(go_id)
+            for parent in term.get_all_parents():
+                all_ids.add(parent)
+        print(all_ids)
+        return [self.analysis.go_dag[term_id] for term_id in all_ids]
+
+    def create_graph(self):
+        def create_edges_with_children(vertex):
+            for child_term in vertex.data.children:
+                if child_term.id not in all_vertices:
+                    continue
+                child_vertex = all_vertices[child_term.id]
+                edge = Edge(vertex, child_vertex)
+                graph.add_edge(edge)
+                create_edges_with_children(child_vertex)
+                
+        graph = Graph()
+        all_vertices = {term.id: ViewVertex(term, *self.node_size) for term in self.find_all_terms()}
+        top_term = self.analysis.go_dag.query_term(self.analysis.ontology.id) 
+        create_edges_with_children(all_vertices[top_term.id])
+        return graph
+        
+    def create_sug_layout(self):
+        sug = SugiyamaLayout(self.graph.C[0])
+        sug.init_all()
+        sug.draw(3)
+        return sug
+        
     def term_to_color(self, term):
         proteins = self.analysis.go_ids.get(term.id)
         if proteins is None:
@@ -56,48 +107,27 @@ class GOWidget(QtGui.QWidget):
             return QtGui.QColor.fromRgbF(mean / max, 0, 0, .7)
         min = self.analysis.protein_groups['log_ratio_X'].min()
         return QtGui.QColor.fromRgbF(0, mean / min, 0, .7)
-        
-    def find_all_terms(self):
-        all_ids = set()
-        for go_id in self.analysis.go_ids:
-        # for go_id in ['GO:0042605']:
-            all_ids.add(go_id)
-            term = self.analysis.go_dag.query_term(go_id)
-            for parent in term.get_all_parents():
-                all_ids.add(parent)
-        print(all_ids)
-        return all_ids
      
     def create_graph_widget(self):
         scene = QtGui.QGraphicsScene(self)
-        node_size = (75, 50)
-        margin = (5, 80)
         
-        def add_term_children_to_scene(term, term_x, term_y):
-            i = 0
-            for child_term in term.children:
-                if child_term.id not in all_terms or child_term.id in done:
+        w, h = self.node_size
+        for layer in self.sug.layers:
+            print(layer)
+            for vertex in layer:
+                x, y = vertex.view.xy
+                try:
+                    term = vertex.data
+                except AttributeError:
                     continue
-                x = (node_size[0] * i) + (margin[0] * i)
-                y = (node_size[1] * child_term.depth) + (margin[1] * child_term.depth)
-                color = self.term_to_color(child_term)
-                node = Node(x, y, node_size[0], node_size[1], color, child_term, scene)
-                scene.addItem(self.create_edge_path(
-                    x + (node_size[0] / 2), y,
-                    term_x + (node_size[0] / 2), term_y + node_size[1], 
-                    scene))
-                scene.addItem(node)
-                if child_term.children:
-                    add_term_children_to_scene(child_term, x, y)
-                i += 1
-                done.add(child_term.id)
-                
-        done = set()
-        all_terms = self.find_all_terms()
-        top_term = self.analysis.go_dag.query_term(self.analysis.ontology.id) 
-        color = self.term_to_color(top_term)
-        scene.addItem(Node(0, 0, node_size[0], node_size[1], color, top_term, scene))
-        add_term_children_to_scene(top_term, 0, 0)
+                color = QtGui.QColor.fromRgbF(1, 1, 1)
+                scene.addItem(Node(x, y, w, h, color, term, scene))
+                for edge in vertex.e_out():
+                    to_x, to_y = edge.v[1].view.xy
+                    scene.addItem(self.create_edge_path(
+                        x + (w / 2), y + h, # from
+                        to_x + (w / 2), to_y, # to
+                        scene))
         
         view = QtGui.QGraphicsView(scene, self)
         view.setRenderHint(QtGui.QPainter.Antialiasing)
