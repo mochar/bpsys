@@ -3,6 +3,7 @@ import time
 from PySide import QtCore, QtGui
 
 from .significance_widget import SignificanceWidget
+from .clusters_widget import ClustersWidget
 from .go_widget import GOWidget
 
 
@@ -19,13 +20,14 @@ class AnalysisWorker(QtCore.QObject):
         self.update_message.emit('Significantie uitvoeren...')
         self.analysis.find_significant()
         self.update_gui.emit()
+        self.update_message.emit('Clusteren...')
+        # self.analysis.cluster()
+        self.update_gui.emit()
         self.update_message.emit('GO Enrichment Analyse uitvoeren...')
-        start = time.time()
         for i, _ in enumerate(self.analysis.iterate_go_terms()):
             if i % 1000 == 0:
                 self.update_gui.emit()
                 time.sleep(.01)
-        print(time.time() - start)
         self.update_message.emit('KLAAR!!')
         self.all_done.emit()
 
@@ -64,8 +66,8 @@ class CentralWidget(QtGui.QWidget):
     def set_up(self):
         self.tab_widget = QtGui.QTabWidget(self)
         self.tab_widget.addTab(SignificanceWidget(self, self.analysis), 'Significantie')
+        self.tab_widget.addTab(ClustersWidget(self, self.analysis), 'Clusters')
         self.tab_widget.addTab(GOWidget(self, self.analysis), 'GO Enrichment')
-        self.tab_widget.addTab(QtGui.QWidget(self), 'Clusters')
         self.setLayout(QtGui.QHBoxLayout())
         self.layout().addWidget(self.tab_widget)
         
@@ -75,7 +77,7 @@ class CentralWidget(QtGui.QWidget):
         
     @QtCore.Slot(str)
     def update_statusbar_message(self, message):
-        self.parent().statusBar().showMessage('GO Enrichment Analyse uitvoeren...')
+        self.parent().statusBar().showMessage(message)
         
     @QtCore.Slot()
     def done(self):

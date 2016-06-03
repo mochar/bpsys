@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 import math
 import re
 
@@ -9,13 +9,16 @@ import numpy as np
 from obo_parser import GODag
 
 
+Ontology = namedtuple('Ontology', 'name, letter, id')
+
+
 class Analysis(object):
     def __init__(self, pg_path=None):
         self.protein_groups = None
         self.bin_size = 300
         self.p_value = 0.05
         self.p_value_go = 0.05
-        self.ontology = 'Molecular function'
+        self._ontology = 'Molecular function'
         self.go_dag = None
         self.go_ids = {}
         if pg_path is not None:
@@ -49,12 +52,20 @@ class Analysis(object):
                 d[protein_id] = id_
         return d
     
-    def _ontology_letter(self):
-        if self.ontology == 'Molecular function':
-            return 'F'
-        if self.ontology == 'Biological process':
-            return 'P'
-        return 'C'
+    @property
+    def ontology(self):
+        return self._ontology
+        
+    @ontology.setter
+    def ontology(self, name):
+        if name == 'Molecular function':
+            self._ontology = Ontology(name, 'F', 'GO:0003674')
+        elif name == 'Biological process':
+            self._ontology = Ontology(name, 'P', 'GO:0008150')
+        elif name == 'Cellular component':
+            self._ontology = Ontology(name, 'C', 'GO:0005575')
+        else:
+            raise Exception('Invalid ontology name')
         
     def load_data(self, file_path):
         columns = self._find_column_names(file_path)
@@ -138,7 +149,7 @@ class Analysis(object):
     
     def iterate_go_terms(self):
         pgs = self.protein_groups # Easier to work with
-        associations = self.associations[self.associations['class'] == self._ontology_letter()]
+        associations = self.associations[self.associations['class'] == self.ontology.letter]
         significant_count = len(pgs[pgs.significant == True])
 
         self.go_ids = {}

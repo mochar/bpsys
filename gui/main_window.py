@@ -109,7 +109,7 @@ class StartAnalysisDialog(QtGui.QDialog):
         self.go_combo = QtGui.QComboBox()
         self.go_combo.addItem('Molecular function')
         self.go_combo.addItem('Biological process')
-        self.go_combo.addItem('Cellulair location')
+        self.go_combo.addItem('Cellular component')
         form_layout.addRow('Ontology', self.go_combo)
         layout.addLayout(form_layout)
     
