@@ -2,13 +2,13 @@ from PySide import QtCore, QtGui
 
 
 class Node(QtGui.QGraphicsRectItem):
-    def __init__(self, x, y, w, h, term, scene):
+    def __init__(self, x, y, w, h, color, term, scene):
         super(Node, self).__init__(QtCore.QRectF(x, y, w, h), scene=scene)
         self.term = term
         self.setZValue(1)
         self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
-        self.setBrush(QtCore.Qt.green)
         self.setPen(QtGui.QPen(QtCore.Qt.black, 1.75))
+        self.setBrush(QtGui.QBrush(color))
 
     def itemChange(self, change, value):
         if change == QtGui.QGraphicsItem.ItemPositionChange:
@@ -27,11 +27,10 @@ class Path(QtGui.QGraphicsPathItem):
 
 
 class GOWidget(QtGui.QWidget):
-    def __init__(self, parent, analysis=None):
+    def __init__(self, parent, analysis):
         super(GOWidget, self).__init__(parent=parent)
         self.analysis = analysis
-        if analysis is not None:
-            self.set_up()
+        self.set_up()
         
     def set_up(self):
         layout = QtGui.QHBoxLayout()
@@ -46,6 +45,17 @@ class GOWidget(QtGui.QWidget):
         # Graph
         widget = self.create_graph_widget()
         layout.addWidget(widget)
+        
+    def term_to_color(self, term):
+        proteins = self.analysis.go_ids.get(term.id)
+        if proteins is None:
+            return QtGui.QColor.fromRgbF(1, 1, 1)
+        mean = proteins['log_ratio_X'].mean()
+        if mean > 0:
+            max = self.analysis.protein_groups['log_ratio_X'].max()
+            return QtGui.QColor.fromRgbF(mean / max, 0, 0)
+        min = self.analysis.protein_groups['log_ratio_X'].min()
+        return QtGui.QColor.fromRgbF(0, mean / min, 0)
         
     def find_all_terms(self):
         all_ids = set()
@@ -70,7 +80,8 @@ class GOWidget(QtGui.QWidget):
                     continue
                 x = (node_size[0] * i) + (margin[0] * i)
                 y = (node_size[1] * child_term.level) + (margin[1] * child_term.level)
-                node = Node(x, y, node_size[0], node_size[1], child_term, scene)
+                color = self.term_to_color(child_term)
+                node = Node(x, y, node_size[0], node_size[1], color, child_term, scene)
                 scene.addItem(self.create_edge_path(
                     x + (node_size[0] / 2), y,
                     term_x + (node_size[0] / 2), term_y + node_size[1], 
@@ -84,7 +95,8 @@ class GOWidget(QtGui.QWidget):
         done = set()
         all_terms = self.find_all_terms()
         top_term = self.analysis.go_dag.query_term(self.analysis.ontology.id) 
-        scene.addItem(Node(0, 0, node_size[0], node_size[1], top_term, scene))
+        color = self.term_to_color(top_term)
+        scene.addItem(Node(0, 0, node_size[0], node_size[1], color, top_term, scene))
         add_term_children_to_scene(top_term, 0, 0)
         
         view = QtGui.QGraphicsView(scene, self)
