@@ -53,9 +53,9 @@ class GOWidget(QtGui.QWidget):
         mean = proteins['log_ratio_X'].mean()
         if mean > 0:
             max = self.analysis.protein_groups['log_ratio_X'].max()
-            return QtGui.QColor.fromRgbF(mean / max, 0, 0)
+            return QtGui.QColor.fromRgbF(mean / max, 0, 0, .7)
         min = self.analysis.protein_groups['log_ratio_X'].min()
-        return QtGui.QColor.fromRgbF(0, mean / min, 0)
+        return QtGui.QColor.fromRgbF(0, mean / min, 0, .7)
         
     def find_all_terms(self):
         all_ids = set()
@@ -79,7 +79,7 @@ class GOWidget(QtGui.QWidget):
                 if child_term.id not in all_terms or child_term.id in done:
                     continue
                 x = (node_size[0] * i) + (margin[0] * i)
-                y = (node_size[1] * child_term.level) + (margin[1] * child_term.level)
+                y = (node_size[1] * child_term.depth) + (margin[1] * child_term.depth)
                 color = self.term_to_color(child_term)
                 node = Node(x, y, node_size[0], node_size[1], color, child_term, scene)
                 scene.addItem(self.create_edge_path(
