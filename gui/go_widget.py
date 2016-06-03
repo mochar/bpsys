@@ -24,15 +24,14 @@ class Node(QtGui.QGraphicsRectItem):
         self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable, True)
         self.setPen(QtGui.QPen(QtCore.Qt.black, 1.75))
         self.setBrush(QtGui.QBrush(color))
+        
+        self.text = QtGui.QGraphicsTextItem(self.term.name, parent=self)
+        self.text.setPos(x, y)
+        self.text.setTextWidth(w)
+        print(self.text.boundingRect())
 
-    def itemChange(self, change, value):
-        if change == QtGui.QGraphicsItem.ItemPositionChange:
-            self.setPos(value.x(), value.y())
-            
-    def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget=None):
-        super(Node, self).paint(QPainter, QStyleOptionGraphicsItem, QWidget_widget)
-        rect = self.boundingRect()
-        QPainter.drawText(rect.center(), self.term.id)
+    def mousePressEvent(self, event):
+        super(Node, self).mousePressEvent(event)
 
 
 class Path(QtGui.QGraphicsPathItem):
@@ -94,7 +93,7 @@ class GOWidget(QtGui.QWidget):
     def create_sug_layout(self):
         sug = SugiyamaLayout(self.graph.C[0])
         sug.init_all()
-        sug.draw(3)
+        sug.draw(10)
         return sug
         
     def term_to_color(self, term):
@@ -108,19 +107,17 @@ class GOWidget(QtGui.QWidget):
         min = self.analysis.protein_groups['log_ratio_X'].min()
         return QtGui.QColor.fromRgbF(0, mean / min, 0, .7)
      
-    def create_graph_widget(self):
+    def create_graph_scene(self):
         scene = QtGui.QGraphicsScene(self)
-        
         w, h = self.node_size
         for layer in self.sug.layers:
-            print(layer)
             for vertex in layer:
                 x, y = vertex.view.xy
                 try:
                     term = vertex.data
                 except AttributeError:
                     continue
-                color = QtGui.QColor.fromRgbF(1, 1, 1)
+                color = self.term_to_color(vertex.data)
                 scene.addItem(Node(x, y, w, h, color, term, scene))
                 for edge in vertex.e_out():
                     to_x, to_y = edge.v[1].view.xy
@@ -128,7 +125,10 @@ class GOWidget(QtGui.QWidget):
                         x + (w / 2), y + h, # from
                         to_x + (w / 2), to_y, # to
                         scene))
+        return scene
         
+    def create_graph_widget(self):
+        scene = self.create_graph_scene()
         view = QtGui.QGraphicsView(scene, self)
         view.setRenderHint(QtGui.QPainter.Antialiasing)
         return view
