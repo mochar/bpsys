@@ -4,6 +4,8 @@ from PySide import QtCore, QtGui
 from grandalf.graphs import Vertex, Edge, Graph
 from grandalf.layouts import SugiyamaLayout
 
+from .models import TreeViewModel, TreeItem
+
 
 class DefaultView(object):
     def __init__(self, w, h):
@@ -54,14 +56,40 @@ class GOWidget(QtGui.QWidget):
         self.setLayout(layout)
  
         # GO terms
-        terms_layout = QtGui.QVBoxLayout()
-        layout.addLayout(terms_layout)
-        for go_id in list(self.analysis.go_ids.keys())[:10]:
-            terms_layout.addWidget(QtGui.QLabel(go_id))
+        # top_term = self.analysis.go_dag.query_term(self.analysis.ontology.id) 
+        # items = []
+        # tree_view = QtGui.QTreeView()
+        # tree_view.setModel(TreeViewModel(items))
+        # layout.addWidget(tree_widget)
+ 
+        # GO terms
+        def add_children(term, item, add):
+            for child in term.children:
+                child_item = QtGui.QTreeWidgetItem(item)
+                child_item.setText(0, child.name)
+                child_item.setText(1, child.id)
+                if add:
+                    items.append(child_item)
+                add_children(child, child_item, False)
+            
+        top_term = self.analysis.go_dag.query_term(self.analysis.ontology.id) 
+        tree_widget = QtGui.QTreeWidget()
+        tree_widget.setColumnCount(2)
+        tree_widget.setHeaderLabels(['GO Term', 'ID'])
+        items = []
+        add_children(top_term, tree_widget, True)
+        tree_widget.insertTopLevelItems(0, items)
+        tree_widget.itemClicked.connect(self.focus_on_term)
+        layout.addWidget(tree_widget)
             
         # Graph
-        widget = self.create_graph_widget()
-        layout.addWidget(widget)
+        self.graph_widget = self.create_graph_widget()
+        layout.addWidget(self.graph_widget)
+        
+    def focus_on_term(self, item, column):
+        term = self.analysis.go_dag[item.text(1)]
+        print(term.name, term.id)
+        # self.graph_widget = self.create_graph_widget()
         
     def find_all_terms(self):
         all_ids = set()
@@ -92,8 +120,8 @@ class GOWidget(QtGui.QWidget):
         
     def create_sug_layout(self):
         sug = SugiyamaLayout(self.graph.C[0])
-        sug.init_all()
-        sug.draw(10)
+        sug.init_all(optimize=True)
+        sug.draw(5)
         return sug
         
     def term_to_color(self, term):
