@@ -4,7 +4,7 @@ from PySide import QtCore, QtGui
 from grandalf.graphs import Vertex, Edge, Graph
 from grandalf.layouts import SugiyamaLayout
 
-from .models import TreeViewModel, TreeItem
+from .models import GOModel, TreeViewModel, TreeItem
 
 
 class DefaultView(object):
@@ -30,7 +30,6 @@ class Node(QtGui.QGraphicsRectItem):
         self.text = QtGui.QGraphicsTextItem(self.term.name, parent=self)
         self.text.setPos(x, y)
         self.text.setTextWidth(w)
-        print(self.text.boundingRect())
 
     def mousePressEvent(self, event):
         super(Node, self).mousePressEvent(event)
@@ -39,89 +38,73 @@ class Node(QtGui.QGraphicsRectItem):
 class Path(QtGui.QGraphicsPathItem):
     def __init__(self, path, scene):
         super(Path, self).__init__(path)
-        self.setPen(QtGui.QPen(QtCore.Qt.red, 1.75))
+        self.setPen(QtGui.QPen(QtCore.Qt.black, 1.75))
 
 
 class GOWidget(QtGui.QWidget):
     def __init__(self, parent, analysis):
         super(GOWidget, self).__init__(parent=parent)
         self.analysis = analysis
-        self.node_size = (75, 50)
-        self.graph = self.create_graph()
-        self.sug = self.create_sug_layout()
+        self.node_size = (95, 65)
+        self.parent_count = 15
         self.set_up()
         
     def set_up(self):
         layout = QtGui.QHBoxLayout()
         self.setLayout(layout)
  
-        # GO terms
-        # top_term = self.analysis.go_dag.query_term(self.analysis.ontology.id) 
-        # items = []
-        # tree_view = QtGui.QTreeView()
-        # tree_view.setModel(TreeViewModel(items))
-        # layout.addWidget(tree_widget)
- 
-        # GO terms
-        def add_children(term, item, add):
-            for child in term.children:
-                child_item = QtGui.QTreeWidgetItem(item)
-                child_item.setText(0, child.name)
-                child_item.setText(1, child.id)
-                if add:
-                    items.append(child_item)
-                add_children(child, child_item, False)
-            
-        top_term = self.analysis.go_dag.query_term(self.analysis.ontology.id) 
-        tree_widget = QtGui.QTreeWidget()
-        tree_widget.setColumnCount(2)
-        tree_widget.setHeaderLabels(['GO Term', 'ID'])
-        items = []
-        add_children(top_term, tree_widget, True)
-        tree_widget.insertTopLevelItems(0, items)
-        tree_widget.itemClicked.connect(self.focus_on_term)
-        layout.addWidget(tree_widget)
-            
         # Graph
         self.graph_widget = self.create_graph_widget()
-        layout.addWidget(self.graph_widget)
-        
-    def focus_on_term(self, item, column):
-        term = self.analysis.go_dag[item.text(1)]
-        print(term.name, term.id)
-        # self.graph_widget = self.create_graph_widget()
-        
-    def find_all_terms(self):
-        all_ids = set()
-        for go_id in self.analysis.go_terms:
-        # for go_id in ['GO:0042605']:
-            all_ids.add(go_id)
-            term = self.analysis.go_dag.query_term(go_id)
-            for parent in term.get_all_parents():
-                all_ids.add(parent)
-        print(all_ids)
-        return [self.analysis.go_dag[term_id] for term_id in all_ids]
 
-    def create_graph(self):
+        # Enriched GO terms
+        table_view = QtGui.QTableView(self)
+        table_view.setModel(GOModel(self.analysis))
+        table_view.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        table_view.clicked.connect(self.select_term)
+            
+        layout.addWidget(table_view, 1)
+        layout.addWidget(self.graph_widget, 3)
+        table_view.selectRow(0)
+        
+    def select_term(self, index):
+        go_id = index.sibling(index.row(), 0).data()
+        family_terms = self.find_family_terms(go_id)
+        self.graph = self.create_graph(family_terms)
+        self.sug = self.create_sug_layout(self.graph)
+        self.graph_widget.setScene(self.create_graph_scene())
+
+    def find_family_terms(self, go_id):
+        term = self.analysis.go_dag.query_term(go_id)
+        all_ids = set() 
+        for i, parent in enumerate(term.get_all_parents()):
+            all_ids.add(parent)
+            #if i == self.parent_count:
+            #    break
+        all_ids.add(go_id)
+        all_terms = [self.analysis.go_dag[term_id] for term_id in all_ids]
+        return all_terms
+
+    def create_graph(self, terms):
         def create_edges_with_children(vertex):
             for child_term in vertex.data.children:
-                if child_term.id not in all_vertices:
+                child_vertex = all_vertices.get(child_term.id)
+                if child_vertex is None:
                     continue
-                child_vertex = all_vertices[child_term.id]
                 edge = Edge(vertex, child_vertex)
                 graph.add_edge(edge)
                 create_edges_with_children(child_vertex)
                 
         graph = Graph()
-        all_vertices = {term.id: ViewVertex(term, *self.node_size) for term in self.find_all_terms()}
-        top_term = self.analysis.go_dag.query_term(self.analysis.ontology.id) 
+        ontology_term_id = self.analysis.ontology.id 
+        top_term = self.analysis.go_dag.query_term(ontology_term_id)
+        all_vertices = {term.id: ViewVertex(term, *self.node_size) for term in terms}
         create_edges_with_children(all_vertices[top_term.id])
         return graph
         
-    def create_sug_layout(self):
-        sug = SugiyamaLayout(self.graph.C[0])
+    def create_sug_layout(self, graph):
+        sug = SugiyamaLayout(graph.C[0])
         sug.init_all(optimize=True)
-        sug.draw(5)
+        sug.draw(10)
         return sug
         
     def term_to_color(self, term):
@@ -156,8 +139,8 @@ class GOWidget(QtGui.QWidget):
         return scene
         
     def create_graph_widget(self):
-        scene = self.create_graph_scene()
-        view = QtGui.QGraphicsView(scene, self)
+        #scene = self.create_graph_scene()
+        view = QtGui.QGraphicsView(self)
         view.setRenderHint(QtGui.QPainter.Antialiasing)
         return view
         

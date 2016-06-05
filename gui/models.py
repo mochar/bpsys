@@ -24,6 +24,34 @@ class PandasModel(QtCore.QAbstractTableModel):
         return None
 
 
+class GOModel(QtCore.QAbstractTableModel):
+    def __init__(self, analysis, parent=None):
+        super(GOModel, self).__init__(parent=parent)
+        self._data = analysis
+
+    def rowCount(self, parent=None):
+        return len(self._data.go_terms)
+
+    def columnCount(self, parent=None):
+        return 3
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                terms = list(self._data.go_terms.values())
+                term = terms[index.row()]
+                col = index.column()
+                if col < 2:
+                    return str(term[col])
+                return str(len(term.proteins))
+        return None
+
+    def headerData(self, col, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            return ['GO ID', 'p waarde', 'eiwitten'][col]
+        return None
+
+
 class TreeItem:
     def __init__(self, term):  
         self.term = term
