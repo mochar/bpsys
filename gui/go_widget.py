@@ -93,7 +93,7 @@ class GOWidget(QtGui.QWidget):
         
     def find_all_terms(self):
         all_ids = set()
-        for go_id in self.analysis.go_ids:
+        for go_id in self.analysis.go_terms:
         # for go_id in ['GO:0042605']:
             all_ids.add(go_id)
             term = self.analysis.go_dag.query_term(go_id)
@@ -125,10 +125,10 @@ class GOWidget(QtGui.QWidget):
         return sug
         
     def term_to_color(self, term):
-        proteins = self.analysis.go_ids.get(term.id)
-        if proteins is None:
+        term = self.analysis.go_terms.get(term.id)
+        if term is None:
             return QtGui.QColor.fromRgbF(1, 1, 1)
-        mean = proteins['log_ratio_X'].mean()
+        mean = term.proteins['log_ratio_X'].mean()
         if mean > 0:
             max = self.analysis.protein_groups['log_ratio_X'].max()
             return QtGui.QColor.fromRgbF(mean / max, 0, 0, .7)

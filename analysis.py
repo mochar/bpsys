@@ -10,6 +10,7 @@ from obo_parser import GODag
 
 
 Ontology = namedtuple('Ontology', 'name, letter, id')
+Term = namedtuple('Term', 'id, p_value, proteins')
 
 
 class Analysis(object):
@@ -20,7 +21,7 @@ class Analysis(object):
         self.p_value_go = 0.05
         self._ontology = 'Molecular function'
         self.go_dag = None
-        self.go_ids = {}
+        self.go_terms = {}
         if pg_path is not None:
             self.load_data(pg_path)
             
@@ -152,7 +153,7 @@ class Analysis(object):
         associations = self.associations[self.associations['class'] == self.ontology.letter]
         significant_count = len(pgs[pgs.significant == True])
 
-        self.go_ids = {}
+        self.go_terms = {}
         for go_id in pd.unique(associations.go_id.ravel()):
             protein_ids = set(associations[associations.go_id == go_id].protein_id)
             proteins = pgs[pgs.id.isin(protein_ids)]
@@ -173,5 +174,5 @@ class Analysis(object):
             # Calculate the fisher's exact test's p-value
             _, p = ss.fisher_exact(table)
             if p <= self.p_value_go:
-                self.go_ids[go_id] = significant
-            yield (go_id, significant)
+                self.go_terms[go_id] = Term(go_id, p, significant)
+            yield
