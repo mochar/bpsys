@@ -77,43 +77,29 @@ class GOWidget(QtGui.QWidget):
         
     def select_term(self, index):
         go_id = index.sibling(index.row(), 0).data()
-        family_terms = self.find_family_terms(go_id)
-        self.graph = self.create_graph(family_terms)
+        self.graph = self.create_graph(go_id)
         self.sug = self.create_sug_layout(self.graph)
         self.graph_widget.setScene(self.create_graph_scene())
 
-    def find_family_terms(self, go_id):
-        term = self.analysis.go_dag.query_term(go_id)
-        all_ids = set() 
-        for i, parent in enumerate(term.get_all_parents()):
-            all_ids.add(parent)
-            #if i == self.parent_count:
-            #    break
-        all_ids.add(go_id)
-        all_terms = [self.analysis.go_dag[term_id] for term_id in all_ids]
-        return all_terms
-
-    def create_graph(self, terms):
+    def create_graph(self, go_id):
         done = []
 
-        def create_edges_with_children(vertex):
-            for child_term in vertex.data.children:
-                child_vertex = all_vertices.get(child_term.id)
-                if child_vertex is None:
+        def create_edges_with_parents(child_vertex):
+            for parent_term in child_vertex.data.parents:
+                e = (child_vertex.data.id, parent_term.id)
+                if e in done:
                     continue
-                v = (vertex.data.id, child_term.id)
-                if v in done:
-                    continue
-                edge = ViewEdge(vertex, child_vertex)
+                parent_vertex = vertices[parent_term.id]
+                edge = ViewEdge(parent_vertex, child_vertex)
                 graph.add_edge(edge)
-                done.append(v)
-                create_edges_with_children(child_vertex)
+                done.append(e)
+                create_edges_with_parents(parent_vertex)
                 
         graph = Graph()
-        ontology_term_id = self.analysis.ontology.id 
-        top_term = self.analysis.go_dag.query_term(ontology_term_id)
-        all_vertices = {term.id: ViewVertex(term, *self.node_size) for term in terms}
-        create_edges_with_children(all_vertices[top_term.id])
+        dag = self.analysis.go_dag
+        term = dag[go_id]
+        vertices = {term: ViewVertex(dag[term], *self.node_size) for term in term.get_all_parents()}
+        create_edges_with_parents(ViewVertex(term, *self.node_size))
         return graph
         
     def create_sug_layout(self, graph):
@@ -156,13 +142,10 @@ class GOWidget(QtGui.QWidget):
         return view
         
     def create_edge_path(self, splines, scene):
-        #pdb.set_trace()
         path = QtGui.QPainterPath()
         w, h = self.node_size
-        print(splines)
         for spline in splines:
             spline = [(x + (w / 2), y + (h / 2)) for x, y in spline]
-            print(spline)
             start, end = spline[0], spline[1]
             path.moveTo(start[0], start[1])
             if len(spline) == 2:
@@ -170,6 +153,5 @@ class GOWidget(QtGui.QWidget):
             else:
                 p1, p2, p3, p4 = spline
                 path.cubicTo(p2[0], p2[1], p3[0], p3[1], p4[0], p4[1])
-        print('------')
         return Path(path, scene=scene)
 
