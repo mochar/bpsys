@@ -1,8 +1,10 @@
 from collections import namedtuple
+import pdb
 
 from PySide import QtCore, QtGui
 from grandalf.graphs import Vertex, Edge, Graph
 from grandalf.layouts import SugiyamaLayout
+from grandalf.routing import route_with_splines, EdgeViewer
 
 from .models import GOModel, TreeViewModel, TreeItem
 
@@ -16,6 +18,12 @@ class ViewVertex(Vertex):
     def __init__(self, data, w, h):
         super(ViewVertex, self).__init__(data)
         self.view = DefaultView(w, h)
+
+
+class ViewEdge(Edge):
+    def __init__(self, v1, v2):
+        super(ViewEdge, self).__init__(v1, v2)
+        self.view = EdgeViewer()
 
 
 class Node(QtGui.QGraphicsRectItem):
@@ -33,6 +41,7 @@ class Node(QtGui.QGraphicsRectItem):
 
     def mousePressEvent(self, event):
         super(Node, self).mousePressEvent(event)
+        self.setVisible(not self.isVisible())
 
 
 class Path(QtGui.QGraphicsPathItem):
@@ -90,7 +99,7 @@ class GOWidget(QtGui.QWidget):
                 child_vertex = all_vertices.get(child_term.id)
                 if child_vertex is None:
                     continue
-                edge = Edge(vertex, child_vertex)
+                edge = ViewEdge(vertex, child_vertex)
                 graph.add_edge(edge)
                 create_edges_with_children(child_vertex)
                 
@@ -103,6 +112,7 @@ class GOWidget(QtGui.QWidget):
         
     def create_sug_layout(self, graph):
         sug = SugiyamaLayout(graph.C[0])
+        sug.route_edge = route_with_splines
         sug.init_all(optimize=True)
         sug.draw(10)
         return sug
@@ -130,22 +140,30 @@ class GOWidget(QtGui.QWidget):
                     continue
                 color = self.term_to_color(vertex.data)
                 scene.addItem(Node(x, y, w, h, color, term, scene))
-                for edge in vertex.e_out():
-                    to_x, to_y = edge.v[1].view.xy
-                    scene.addItem(self.create_edge_path(
-                        x + (w / 2), y + h, # from
-                        to_x + (w / 2), to_y, # to
-                        scene))
+        for edge in self.sug.g.E():
+            scene.addItem(self.create_edge_path(edge.view.splines, scene))
         return scene
         
     def create_graph_widget(self):
-        #scene = self.create_graph_scene()
         view = QtGui.QGraphicsView(self)
         view.setRenderHint(QtGui.QPainter.Antialiasing)
         return view
         
-    def create_edge_path(self, from_x, from_y, to_x, to_y, scene):
+    def create_edge_path(self, splines, scene):
+        #pdb.set_trace()
         path = QtGui.QPainterPath()
-        path.moveTo(from_x, from_y)
-        path.lineTo(to_x, to_y)
+        w, h = self.node_size
+        print(splines)
+        for spline in splines:
+            spline = [(x + (w / 2), y + (h / 2)) for x, y in spline]
+            print(spline)
+            start, end = spline[0], spline[1]
+            path.moveTo(start[0], start[1])
+            if len(spline) == 2:
+                path.lineTo(end[0], end[1])
+            else:
+                p1, p2, p3, p4 = spline
+                path.cubicTo(p2[0], p2[1], p3[0], p3[1], p4[0], p4[1])
+        print('------')
         return Path(path, scene=scene)
+
