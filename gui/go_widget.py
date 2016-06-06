@@ -94,13 +94,19 @@ class GOWidget(QtGui.QWidget):
         return all_terms
 
     def create_graph(self, terms):
+        done = []
+
         def create_edges_with_children(vertex):
             for child_term in vertex.data.children:
                 child_vertex = all_vertices.get(child_term.id)
                 if child_vertex is None:
                     continue
+                v = (vertex.data.id, child_term.id)
+                if v in done:
+                    continue
                 edge = ViewEdge(vertex, child_vertex)
                 graph.add_edge(edge)
+                done.append(v)
                 create_edges_with_children(child_vertex)
                 
         graph = Graph()
