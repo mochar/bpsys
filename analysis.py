@@ -165,7 +165,6 @@ class Analysis(object):
             
             # Calculate the 2x2 table values for the fisher's exact test
             significant_in_term = len(significant)
-            # not_significant_in_term = len(proteins[proteins.significant == False])
             not_significant_in_term = len(proteins) - significant_in_term
             table = [
                 [significant_in_term, significant_count - significant_in_term],
