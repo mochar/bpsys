@@ -2,6 +2,7 @@ from collections import defaultdict, namedtuple
 import math
 import re
 
+from scipy.cluster.hierarchy import linkage, fcluster
 import scipy.stats as ss
 import pandas as pd
 import numpy as np
@@ -176,3 +177,12 @@ class Analysis(object):
             if p <= self.p_value_go:
                 self.go_terms[go_id] = Term(go_id, p, significant)
             yield
+
+    def cluster(self):
+        cols = list(self.protein_groups)
+        ratio_cols = [col for col in cols if col.startswith('log_ratio_')]
+        data = self.protein_groups[ratio_cols]
+        z = linkage(data, method='average')
+        clusters = fcluster(z, 10, 'maxclust')
+        self.protein_groups['cluster'] = clusters
+

@@ -21,7 +21,7 @@ class AnalysisWorker(QtCore.QObject):
         self.analysis.find_significant()
         self.update_gui.emit()
         self.update_message.emit('Clusteren...')
-        # self.analysis.cluster()
+        self.analysis.cluster()
         self.update_gui.emit()
         self.update_message.emit('GO Enrichment Analyse uitvoeren...')
         for i, _ in enumerate(self.analysis.iterate_go_terms()):
