@@ -95,7 +95,7 @@ class Analysis(object):
         self.associations.protein_id = self.associations.protein_id.apply(lambda x: d[x])
     
     def load_go_database(self, file_path):
-        self.go_dag = GODag('../data/go/go-basic.obo')
+        self.go_dag = GODag(file_path)
     
     def find_significant(self):
         def p(log_ratio, limits):
