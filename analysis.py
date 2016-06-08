@@ -19,6 +19,8 @@ class Analysis(object):
         self.protein_groups = None
         self.bin_size = 300
         self.p_value = 0.05
+        self.num_clusters = 20
+        self.linkage = 'average'
         self.p_value_go = 0.05
         self._ontology = 'Molecular function'
         self.go_dag = None
@@ -181,7 +183,7 @@ class Analysis(object):
         cols = list(self.protein_groups)
         ratio_cols = [col for col in cols if col.startswith('log_ratio_')]
         data = self.protein_groups[ratio_cols]
-        z = linkage(data, method='average')
-        clusters = fcluster(z, 10, 'maxclust')
+        z = linkage(data, method=self.linkage)
+        clusters = fcluster(z, self.num_clusters, 'maxclust')
         self.protein_groups['cluster'] = clusters
 

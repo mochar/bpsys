@@ -118,6 +118,17 @@ class StartAnalysisDialog(QtGui.QDialog):
         self.layout.addWidget(group_box)
         layout = QtGui.QVBoxLayout()
         group_box.setLayout(layout)
+
+        form_layout = QtGui.QFormLayout()
+        self.linkage_combo = QtGui.QComboBox()
+        self.linkage_combo.addItem('average')
+        self.linkage_combo.addItem('single')
+        self.linkage_combo.addItem('complete')
+        self.linkage_combo.addItem('centroid')
+        form_layout.addRow('Linkage', self.linkage_combo)
+        self.num_clusters_edit = QtGui.QLineEdit('20')
+        form_layout.addRow('Aantal', self.num_clusters_edit)
+        layout.addLayout(form_layout)
         
     @staticmethod
     def get_parameters(parent, analysis):
@@ -131,6 +142,8 @@ class StartAnalysisDialog(QtGui.QDialog):
         analysis.p_value = float(dialog.p_value_edit.text())
         analysis.p_value_go = float(dialog.p_value_go_edit.text())
         analysis.ontology = dialog.go_combo.currentText()
+        analysis.num_clusters = int(dialog.num_clusters_edit.text())
+        analysis.linkage = dialog.linkage_combo.currentText()
         return (analysis, result == QtGui.QDialog.Accepted)
 
 
