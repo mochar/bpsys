@@ -19,7 +19,7 @@ class SignificanceWidget(QtGui.QWidget):
         # Scatterplot
         self.scatter_widget = pg.PlotWidget(self)
         self.scatter_widget.setLabel('left', 'Intensity')
-        self.scatter_widget.setLabel('bottom', 'Ratio')
+        self.scatter_widget.setLabel('bottom', 'Log ratio')
         self.scatter_widget.setLogMode(x=False, y=True)
 
         # Histogram
@@ -31,20 +31,40 @@ class SignificanceWidget(QtGui.QWidget):
         self.tab_widget = QtGui.QTabWidget(self)
         self.tab_widget.setTabPosition(QtGui.QTabWidget.TabPosition.West)
         self.tab_widget.currentChanged.connect(self.on_tab_change)
+        self.table_models = []
         for sample in self.analysis.samples:
-            columns = ['id', 'protein_ids'] 
-            columns += [c for c in self.analysis.protein_groups if c.endswith('_{}'.format(sample))]
             table_view = QtGui.QTableView(self)
-            table_view.setModel(PandasModel(self.analysis.protein_groups[columns]))
+            table_model = PandasModel(self.analysis.protein_groups, sample)
+            self.table_models.append(table_model)
+            table_view.setModel(table_model)
+            table_view.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+            table_view.verticalHeader().setVisible(False)
             self.tab_widget.addTab(table_view, sample)
+
+        # Filter boxes
+        filter_layout = QtGui.QHBoxLayout()
+        filter_boxes = [
+            QtGui.QCheckBox('p > 0.05'), # Blue
+            QtGui.QCheckBox('0.01 < p < 0.05'), # Red
+            QtGui.QCheckBox('0.001 < p < 0.01'), # Yellow
+            QtGui.QCheckBox('p < 0.001')] # Green
+        for box in filter_boxes:
+            box.toggled.connect(self.filter_table)
+            filter_layout.addWidget(box)
             
         # Add widgets to layout
-        layout.addWidget(self.tab_widget)
+        table_layout = QtGui.QVBoxLayout()
+        table_layout.addLayout(filter_layout)
+        table_layout.addWidget(self.tab_widget)
+        layout.addLayout(table_layout)
         plots_layout = QtGui.QVBoxLayout()
         plots_layout.addWidget(self.hist_widget, 1)
         plots_layout.addWidget(self.scatter_widget, 4)
         layout.addLayout(plots_layout)
-        
+
+    def filter_table(self, checked):
+        pass
+
     def on_tab_change(self, tab_index):
         sample = self.analysis.samples[tab_index]
         self.plot_data(sample)

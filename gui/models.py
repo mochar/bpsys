@@ -2,8 +2,12 @@ from PySide import QtCore, QtGui
 
 
 class PandasModel(QtCore.QAbstractTableModel):
-    def __init__(self, data, parent=None):
+    def __init__(self, protein_groups, sample, parent=None):
         super(PandasModel, self).__init__(parent=parent)
+        cols = ['protein_ids', 'log_ratio_{}'.format(sample),
+                'intensity_{}'.format(sample), 'p_{}'.format(sample)]
+        data = protein_groups[cols]
+        data.columns = ['protein_ids', 'log_ratio', 'intensity', 'p-value']
         self._data = data
 
     def rowCount(self, parent=None):
@@ -15,6 +19,8 @@ class PandasModel(QtCore.QAbstractTableModel):
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
+                protein_group = self._data.values[index.row()]
+                col = index.column()
                 return str(self._data.values[index.row()][index.column()])
         return None
 
