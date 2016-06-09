@@ -70,16 +70,29 @@ class GOWidget(QtGui.QWidget):
         table_view.setModel(GOModel(self.analysis))
         table_view.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         table_view.clicked.connect(self.select_term)
-            
-        layout.addWidget(table_view, 1)
-        layout.addWidget(self.graph_widget, 3)
         table_view.selectRow(0)
+
+        # Proteins in selected GO term
+        self.proteins_table = QtGui.QTableWidget(0, 1)
+        self.proteins_table.verticalHeader().setVisible(False)
+        self.proteins_table.setHorizontalHeaderLabels(['Protein IDs'])
+            
+        layout.addWidget(table_view, 3)
+        layout.addWidget(self.proteins_table, 1)
+        layout.addWidget(self.graph_widget, 3)
         
     def select_term(self, index):
         go_id = index.sibling(index.row(), 0).data()
         self.graph = self.create_graph(go_id)
         self.sug = self.create_sug_layout(self.graph)
         self.graph_widget.setScene(self.create_graph_scene())
+
+        # Update table
+        term = self.analysis.go_terms[go_id]
+        self.proteins_table.setRowCount(len(term.proteins))
+        for i, protein in enumerate(term.proteins.protein_ids):
+            item = QtGui.QTableWidgetItem(protein)
+            self.proteins_table.setItem(i, 0, item)
 
     def create_graph(self, go_id):
         done = []
