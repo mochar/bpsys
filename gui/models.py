@@ -2,12 +2,21 @@ from PySide import QtCore, QtGui
 
 
 class PandasModel(QtCore.QAbstractTableModel):
-    def __init__(self, protein_groups, sample, parent=None):
+    def __init__(self, protein_groups, sample, color=None, parent=None):
         super(PandasModel, self).__init__(parent=parent)
+
         cols = ['protein_ids', 'log_ratio_{}'.format(sample),
                 'intensity_{}'.format(sample), 'p_{}'.format(sample)]
         data = protein_groups[cols]
         data.columns = ['protein_ids', 'log_ratio', 'intensity', 'p-value']
+        if color == 'blue':
+            data = data[data['p-value'] > 0.05]
+        elif color == 'red':
+            data = data[data['p-value'].between(0.01, 0.05)]
+        elif color == 'yellow':
+            data = data[data['p-value'].between(0.001, 0.05)]
+        elif color == 'green':
+            data = data[data['p-value'] < 0.001]
         self._data = data
 
     def rowCount(self, parent=None):

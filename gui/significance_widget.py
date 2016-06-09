@@ -5,12 +5,21 @@ import numpy as np
 from .models import PandasModel
      
 
+class FilterCheckBox(QtGui.QCheckBox):
+    changed = QtCore.Signal(str)
+
+    def __init__(self, name, color):
+        super(FilterCheckBox, self).__init__(name)
+        self.color = color
+        self.setStyleSheet('color: {}'.format(color))
+        self.toggled.connect(lambda x: self.changed.emit(self.color))
+
+
 class SignificanceWidget(QtGui.QWidget):
-    def __init__(self,parent, analysis=None):
+    def __init__(self, parent, analysis):
         super(SignificanceWidget, self).__init__(parent=parent)
         self.analysis = analysis
-        if analysis is not None:
-            self.set_up()
+        self.set_up()
         
     def set_up(self):
         layout = QtGui.QHBoxLayout()
@@ -31,11 +40,11 @@ class SignificanceWidget(QtGui.QWidget):
         self.tab_widget = QtGui.QTabWidget(self)
         self.tab_widget.setTabPosition(QtGui.QTabWidget.TabPosition.West)
         self.tab_widget.currentChanged.connect(self.on_tab_change)
-        self.table_models = []
+        self.table_views = {}
         for sample in self.analysis.samples:
             table_view = QtGui.QTableView(self)
+            self.table_views[sample] = table_view
             table_model = PandasModel(self.analysis.protein_groups, sample)
-            self.table_models.append(table_model)
             table_view.setModel(table_model)
             table_view.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
             table_view.verticalHeader().setVisible(False)
@@ -44,12 +53,12 @@ class SignificanceWidget(QtGui.QWidget):
         # Filter boxes
         filter_layout = QtGui.QHBoxLayout()
         filter_boxes = [
-            QtGui.QCheckBox('p > 0.05'), # Blue
-            QtGui.QCheckBox('0.01 < p < 0.05'), # Red
-            QtGui.QCheckBox('0.001 < p < 0.01'), # Yellow
-            QtGui.QCheckBox('p < 0.001')] # Green
+            FilterCheckBox('p > 0.05', 'blue'),
+            FilterCheckBox('0.01 < p < 0.05', 'red'),
+            FilterCheckBox('0.001 < p < 0.01', 'yellow'),
+            FilterCheckBox('p < 0.001', 'green')]
         for box in filter_boxes:
-            box.toggled.connect(self.filter_table)
+            box.changed.connect(self.filter_table)
             filter_layout.addWidget(box)
             
         # Add widgets to layout
@@ -62,8 +71,10 @@ class SignificanceWidget(QtGui.QWidget):
         plots_layout.addWidget(self.scatter_widget, 4)
         layout.addLayout(plots_layout)
 
-    def filter_table(self, checked):
-        pass
+    def filter_table(self, color):
+        for sample, table_view in self.table_views.items():
+            model = PandasModel(self.analysis.protein_groups, sample, color)
+            table_view.setModel(model)
 
     def on_tab_change(self, tab_index):
         sample = self.analysis.samples[tab_index]
