@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from PySide import QtCore, QtGui
 import pyqtgraph as pg
 import numpy as np
@@ -26,7 +28,7 @@ class SignificanceWidget(QtGui.QWidget):
         self.setLayout(layout)
         
         # Scatterplot
-        self.scatter_widget = pg.PlotWidget(self)
+        self.scatter_widget = pg.PlotWidget(self, enableMenu=False)
         self.scatter_widget.setLabel('left', 'Intensity')
         self.scatter_widget.setLabel('bottom', 'Log ratio')
         self.scatter_widget.setLogMode(x=False, y=True)
@@ -90,11 +92,12 @@ class SignificanceWidget(QtGui.QWidget):
         # Scatterplot
         self.scatter_widget.clear()
         for color, points in zip(colors, data):
-            self.scatter_widget.plot(
+            plot = self.scatter_widget.plot(
                 x=points['log_ratio_{}'.format(sample)],
                 y=points['intensity_{}'.format(sample)],
                 pen=None, symbolPen=None, symbolSize=7,
                 symbolBrush=color, antialias=False)
+            plot.sigPointsClicked.connect(self.select_protein)
         
         # Histogram
         self.hist_widget.clear()
@@ -103,4 +106,10 @@ class SignificanceWidget(QtGui.QWidget):
         y, x = np.histogram(data, bins=bins)
         self.hist_widget.plot(x, y, stepMode=True, fillLevel=0, 
                 brush=(0,0,255,150))
+
+    def select_protein(self, plot, points):
+        point = points[0]
+        text_item = pg.TextItem('sel', anchor=(1, 1), color=(0, 0, 0))
+        text_item.setPos(point.pos())
+        self.scatter_widget.addItem(text_item)
 
