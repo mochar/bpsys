@@ -1,5 +1,6 @@
 from collections import namedtuple
 import pdb
+import re
 
 from PySide import QtCore, QtGui
 from grandalf.graphs import Vertex, Edge, Graph
@@ -69,6 +70,7 @@ class GOWidget(QtGui.QWidget):
         self.setLayout(layout)
  
         # Graph
+        graph_container = QtGui.QWidget()
         self.graph_title = QtGui.QLabel('')
         self.graph_title.setAlignment(QtCore.Qt.AlignHCenter)
         font = QtGui.QFont()
@@ -81,6 +83,7 @@ class GOWidget(QtGui.QWidget):
         graph_layout = QtGui.QVBoxLayout()
         graph_layout.addWidget(self.graph_title)
         graph_layout.addWidget(self.graph_widget)
+        graph_container.setLayout(graph_layout)
 
         # Enriched GO terms
         go_table = pg.TableWidget()
@@ -93,11 +96,15 @@ class GOWidget(QtGui.QWidget):
         go_table.setData(data)
 
         # Proteins in selected GO term
-        self.proteins_list = QtGui.QListWidget()
+        self.proteins_table = pg.TableWidget()
+        self.proteins_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
             
-        layout.addWidget(go_table, 1)
-        layout.addWidget(self.proteins_list, 1)
-        layout.addLayout(graph_layout, 2)
+        # Splitter with widgets
+        splitter = QtGui.QSplitter(self)
+        splitter.addWidget(go_table)
+        splitter.addWidget(self.proteins_table)
+        splitter.addWidget(graph_container)
+        layout.addWidget(splitter)
         
     def select_term(self, index):
         go_id = index.sibling(index.row(), 0).data()
@@ -106,13 +113,22 @@ class GOWidget(QtGui.QWidget):
         self.sug = self.create_sug_layout(self.graph)
         self.graph_widget.setScene(self.create_graph_scene())
 
-        # Update list
+        # Update table
+        regex = re.compile(self.analysis.id_regex)
         term = self.analysis.go_terms[go_id]
-        self.proteins_list.clear()
-        zipped = zip(term.proteins.protein_ids, term.proteins.log_ratio_X)
-        for protein, ratio in zipped:
-            item = QtGui.QListWidgetItem(protein, self.proteins_list)
-            item.setBackground(self.ratio_to_color(ratio))
+        cols = ['protein_ids']
+        cols += ['log_ratio_{}'.format(sample) for sample in self.analysis.samples]
+        dtype = [('Eiwit', object)] + [(col, float) for col in cols][1:]
+        data = np.array(
+                [(regex.findall(row[0].split(';')[0])[0], float(row[1]), float(row[2]), float(row[3]))
+                 for row in term.proteins[cols].as_matrix()], dtype=dtype)
+        self.proteins_table.setData(data)
+
+        for i in range(self.proteins_table.rowCount()):
+            for j in range(1, 4):
+                item = self.proteins_table.item(i, j)
+                ratio = float(item.text())
+                item.setBackground(self.ratio_to_color(ratio))
 
     def create_graph(self, go_id):
         done = []
