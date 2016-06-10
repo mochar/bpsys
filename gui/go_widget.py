@@ -6,6 +6,7 @@ from grandalf.graphs import Vertex, Edge, Graph
 from grandalf.layouts import SugiyamaLayout
 from grandalf.routing import route_with_splines, EdgeViewer
 import pyqtgraph as pg
+import numpy as np
 
 from .models import GOModel, TreeViewModel, TreeItem
 
@@ -82,16 +83,19 @@ class GOWidget(QtGui.QWidget):
         graph_layout.addWidget(self.graph_widget)
 
         # Enriched GO terms
-        table_view = QtGui.QTableView(self)
-        table_view.setModel(GOModel(self.analysis))
-        table_view.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        table_view.clicked.connect(self.select_term)
-        table_view.selectRow(0)
+        go_table = pg.TableWidget()
+        go_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        go_table.clicked.connect(self.select_term)
+        data = np.array(
+            [(term[0], float(term[1]), len(term[2])) 
+             for term in self.analysis.go_terms.values()],
+            dtype=[('GO ID', object), ('P-waarde', float), ('Eiwitten', int)])
+        go_table.setData(data)
 
         # Proteins in selected GO term
         self.proteins_list = QtGui.QListWidget()
             
-        layout.addWidget(table_view, 1)
+        layout.addWidget(go_table, 1)
         layout.addWidget(self.proteins_list, 1)
         layout.addLayout(graph_layout, 2)
         
