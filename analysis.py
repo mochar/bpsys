@@ -17,6 +17,7 @@ Term = namedtuple('Term', 'id, p_value, proteins')
 class Analysis(object):
     def __init__(self, pg_path=None):
         self.protein_groups = None
+        self.id_regex = '.*'
         self.bin_size = 300
         self.p_value = 0.05
         self.num_clusters = 20
@@ -25,6 +26,9 @@ class Analysis(object):
         self._ontology = 'Molecular function'
         self.go_dag = None
         self.go_terms = {}
+        self.pg_path = pg_path # Protein groups
+        self.database_path = None
+        self.ass_path = None # Associations file
         if pg_path is not None:
             self.load_data(pg_path)
             
@@ -71,7 +75,9 @@ class Analysis(object):
         else:
             raise Exception('Invalid ontology name')
         
-    def load_data(self, file_path):
+    def load_data(self, file_path=None):
+        if file_path is None:
+            file_path = self.pg_path
         columns = self._find_column_names(file_path)
         try:
             self.protein_groups = pd.read_table(file_path, usecols=columns.keys())
@@ -88,7 +94,11 @@ class Analysis(object):
         self.protein_groups.drop('Reverse', axis=1, inplace=True)
         self.protein_groups.drop('contaminant', axis=1, inplace=True)
 
-    def load_associations(self, file_path, id_regex='.*'):
+    def load_associations(self, file_path=None, id_regex=None):
+        if file_path is None:
+            file_path = self.ass_path
+        if id_regex is None:
+            id_regex  = self.id_regex
         d = self._map_protein_ids(id_regex)
         self.associations = pd.read_table(file_path, comment='!', header=None,
             usecols=[1, 4, 8], names=['protein_id', 'go_id', 'class'])
@@ -96,7 +106,9 @@ class Analysis(object):
         self.associations = self.associations[self.associations.protein_id.isin(d.keys())]
         self.associations.protein_id = self.associations.protein_id.apply(lambda x: d[x])
     
-    def load_go_database(self, file_path):
+    def load_go_database(self, file_path=None):
+        if file_path is None:
+            file_path = self.database_path
         self.go_dag = GODag(file_path)
     
     def find_significant(self):

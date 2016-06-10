@@ -134,10 +134,10 @@ class StartAnalysisDialog(QtGui.QDialog):
     def get_parameters(parent, analysis):
         dialog = StartAnalysisDialog(parent)
         result = dialog.exec_()
-        analysis.load_data(dialog.pg_path.text())
-        analysis.load_associations(dialog.ass_path.text(), 
-                                   dialog.id_regex.text())
-        analysis.load_go_database(dialog.go_db_path.text())
+        analysis.pg_path = dialog.pg_path.text()
+        analysis.ass_path = dialog.ass_path.text()
+        analysis.id_regex = dialog.id_regex.text()
+        analysis.database_path = dialog.go_db_path.text()
         analysis.bin_size = int(dialog.bin_size_edit.text())
         analysis.p_value = float(dialog.p_value_edit.text())
         analysis.p_value_go = float(dialog.p_value_go_edit.text())

@@ -17,6 +17,15 @@ class AnalysisWorker(QtCore.QObject):
         self.analysis = analysis
 
     def run(self):
+        self.update_message.emit('proteinGroups.txt inladen...')
+        self.analysis.load_data()
+        self.update_gui.emit()
+        self.update_message.emit('GO database inladen...')
+        self.analysis.load_go_database()
+        self.update_gui.emit()
+        self.update_message.emit('Associations file inladen...')
+        self.analysis.load_associations()
+        self.update_gui.emit()
         self.update_message.emit('Significantie uitvoeren...')
         self.analysis.find_significant()
         self.update_gui.emit()
