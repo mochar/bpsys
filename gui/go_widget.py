@@ -28,7 +28,7 @@ class ViewEdge(Edge):
 
 
 class Node(QtGui.QGraphicsRectItem):
-    def __init__(self, x, y, w, h, color, term, scene):
+    def __init__(self, x, y, w, h, color, term, scene, bold=False):
         super(Node, self).__init__(QtCore.QRectF(x, y, w, h), scene=scene)
         self.term = term
         self.setZValue(1)
@@ -37,7 +37,10 @@ class Node(QtGui.QGraphicsRectItem):
         self.setBrush(QtGui.QBrush(color))
         
         self.text = QtGui.QGraphicsTextItem(parent=self)
-        self.text.setHtml('<center>{}</center>'.format(self.term.name))
+        html = '<center>{}</center>'
+        if bold:
+            html = '<center><b>{}</b></center>'
+        self.text.setHtml(html.format(self.term.name))
         self.text.setPos(x, y)
         self.text.setTextWidth(w)
 
@@ -65,9 +68,18 @@ class GOWidget(QtGui.QWidget):
         self.setLayout(layout)
  
         # Graph
+        self.graph_title = QtGui.QLabel('')
+        self.graph_title.setAlignment(QtCore.Qt.AlignHCenter)
+        font = QtGui.QFont()
+        font.setBold(True)
+        self.graph_title.setFont(font)
+        self.graph_title.setWordWrap(True)
         self.graph_widget = self.create_graph_widget()
         self.color_map = pg.ColorMap([0, 0.5, 1], [(1., 1., 1.),
             (1., 1., 0.), (1., 0.5, 0.)])
+        graph_layout = QtGui.QVBoxLayout()
+        graph_layout.addWidget(self.graph_title)
+        graph_layout.addWidget(self.graph_widget)
 
         # Enriched GO terms
         table_view = QtGui.QTableView(self)
@@ -81,10 +93,11 @@ class GOWidget(QtGui.QWidget):
             
         layout.addWidget(table_view, 1)
         layout.addWidget(self.proteins_list, 1)
-        layout.addWidget(self.graph_widget, 2)
+        layout.addLayout(graph_layout, 2)
         
     def select_term(self, index):
         go_id = index.sibling(index.row(), 0).data()
+        self.graph_title.setText(self.analysis.go_dag[go_id].name.upper())
         self.graph = self.create_graph(go_id)
         self.sug = self.create_sug_layout(self.graph)
         self.graph_widget.setScene(self.create_graph_scene())
@@ -143,7 +156,7 @@ class GOWidget(QtGui.QWidget):
     def create_graph_scene(self):
         scene = QtGui.QGraphicsScene(self)
         w, h = self.node_size
-        for layer in self.sug.layers:
+        for i, layer in enumerate(self.sug.layers):
             for vertex in layer:
                 x, y = vertex.view.xy
                 try:
@@ -151,7 +164,8 @@ class GOWidget(QtGui.QWidget):
                 except AttributeError:
                     continue
                 color = self.term_to_color(vertex.data)
-                scene.addItem(Node(x, y, w, h, color, term, scene))
+                bold = i == len(self.sug.layers) - 1
+                scene.addItem(Node(x, y, w, h, color, term, scene, bold))
         for edge in self.sug.g.E():
             scene.addItem(self.create_edge_path(edge.view.splines, scene))
         return scene
