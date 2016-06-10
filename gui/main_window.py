@@ -15,8 +15,8 @@ class StartAnalysisDialog(QtGui.QDialog):
         
         self.set_up_protein_groups()
         self.set_up_significance()
-        self.set_up_go()
         self.set_up_cluster()
+        self.set_up_go()
         
         # Dialog buttons
         buttons = QtGui.QDialogButtonBox(
