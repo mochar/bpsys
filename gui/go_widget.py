@@ -35,7 +35,8 @@ class Node(QtGui.QGraphicsRectItem):
         self.setPen(QtGui.QPen(QtCore.Qt.black, 1.75))
         self.setBrush(QtGui.QBrush(color))
         
-        self.text = QtGui.QGraphicsTextItem(self.term.name, parent=self)
+        self.text = QtGui.QGraphicsTextItem(parent=self)
+        self.text.setHtml('<center>{}</center>'.format(self.term.name))
         self.text.setPos(x, y)
         self.text.setTextWidth(w)
 
@@ -54,7 +55,7 @@ class GOWidget(QtGui.QWidget):
     def __init__(self, parent, analysis):
         super(GOWidget, self).__init__(parent=parent)
         self.analysis = analysis
-        self.node_size = (95, 65)
+        self.node_size = (130, 65)
         self.parent_count = 15
         self.set_up()
         
