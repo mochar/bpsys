@@ -5,6 +5,7 @@ from PySide import QtCore, QtGui
 from grandalf.graphs import Vertex, Edge, Graph
 from grandalf.layouts import SugiyamaLayout
 from grandalf.routing import route_with_splines, EdgeViewer
+import pyqtgraph as pg
 
 from .models import GOModel, TreeViewModel, TreeItem
 
@@ -65,6 +66,8 @@ class GOWidget(QtGui.QWidget):
  
         # Graph
         self.graph_widget = self.create_graph_widget()
+        self.color_map = pg.ColorMap([0, 0.5, 1], [(1., 1., 1.),
+            (1., 1., 0.), (1., 0.5, 0.)])
 
         # Enriched GO terms
         table_view = QtGui.QTableView(self)
@@ -74,13 +77,11 @@ class GOWidget(QtGui.QWidget):
         table_view.selectRow(0)
 
         # Proteins in selected GO term
-        self.proteins_table = QtGui.QTableWidget(0, 1)
-        self.proteins_table.verticalHeader().setVisible(False)
-        self.proteins_table.setHorizontalHeaderLabels(['Protein IDs'])
+        self.proteins_list = QtGui.QListWidget()
             
-        layout.addWidget(table_view, 3)
-        layout.addWidget(self.proteins_table, 1)
-        layout.addWidget(self.graph_widget, 3)
+        layout.addWidget(table_view, 1)
+        layout.addWidget(self.proteins_list, 1)
+        layout.addWidget(self.graph_widget, 2)
         
     def select_term(self, index):
         go_id = index.sibling(index.row(), 0).data()
@@ -88,12 +89,13 @@ class GOWidget(QtGui.QWidget):
         self.sug = self.create_sug_layout(self.graph)
         self.graph_widget.setScene(self.create_graph_scene())
 
-        # Update table
+        # Update list
         term = self.analysis.go_terms[go_id]
-        self.proteins_table.setRowCount(len(term.proteins))
-        for i, protein in enumerate(term.proteins.protein_ids):
-            item = QtGui.QTableWidgetItem(protein)
-            self.proteins_table.setItem(i, 0, item)
+        self.proteins_list.clear()
+        zipped = zip(term.proteins.protein_ids, term.proteins.log_ratio_X)
+        for protein, ratio in zipped:
+            item = QtGui.QListWidgetItem(protein, self.proteins_list)
+            item.setBackground(self.ratio_to_color(ratio))
 
     def create_graph(self, go_id):
         done = []
@@ -127,12 +129,16 @@ class GOWidget(QtGui.QWidget):
         term = self.analysis.go_terms.get(term.id)
         if term is None:
             return QtGui.QColor.fromRgbF(1, 1, 1)
-        mean = term.proteins['log_ratio_X'].mean()
-        if mean > 0:
-            max = self.analysis.protein_groups['log_ratio_X'].max()
-            return QtGui.QColor.fromRgbF(mean / max, 0, 0, .7)
-        min = self.analysis.protein_groups['log_ratio_X'].min()
-        return QtGui.QColor.fromRgbF(0, mean / min, 0, .7)
+        size = len(term.proteins)
+        max_ = max([len(term.proteins) for term in self.analysis.go_terms.values()])
+        return self.color_map.map([size / max_], mode='qcolor')[0]
+
+    def ratio_to_color(self, ratio):
+        if ratio > 0:
+            max_ = self.analysis.protein_groups['log_ratio_X'].max()
+            return QtGui.QColor.fromRgbF(ratio / max_, 0, 0, .7)
+        min_ = self.analysis.protein_groups['log_ratio_X'].min()
+        return QtGui.QColor.fromRgbF(0, ratio / min_, 0, .7)
      
     def create_graph_scene(self):
         scene = QtGui.QGraphicsScene(self)
