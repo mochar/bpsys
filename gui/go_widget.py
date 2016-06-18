@@ -125,10 +125,10 @@ class GOWidget(QtGui.QWidget):
         self.proteins_table.setData(data)
 
         for i in range(self.proteins_table.rowCount()):
-            for j in range(1, 4):
+            for j, sample in enumerate(self.analysis.samples, 1):
                 item = self.proteins_table.item(i, j)
                 ratio = float(item.text())
-                item.setBackground(self.ratio_to_color(ratio))
+                item.setBackground(self.ratio_to_color(sample, ratio))
 
     def create_graph(self, go_id):
         done = []
@@ -166,11 +166,12 @@ class GOWidget(QtGui.QWidget):
         max_ = max([len(term.proteins) for term in self.analysis.go_terms.values()])
         return self.color_map.map([size / max_], mode='qcolor')[0]
 
-    def ratio_to_color(self, ratio):
+    def ratio_to_color(self, sample, ratio):
+        col = 'log_ratio_{}'.format(sample)
         if ratio > 0:
-            max_ = self.analysis.protein_groups['log_ratio_X'].max()
+            max_ = self.analysis.protein_groups[col].max()
             return QtGui.QColor.fromRgbF(ratio / max_, 0, 0, .7)
-        min_ = self.analysis.protein_groups['log_ratio_X'].min()
+        min_ = self.analysis.protein_groups[col].min()
         return QtGui.QColor.fromRgbF(0, ratio / min_, 0, .7)
      
     def create_graph_scene(self):

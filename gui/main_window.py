@@ -34,7 +34,7 @@ class StartAnalysisDialog(QtGui.QDialog):
         
         # proteinGroups.txt
         pg_layout = QtGui.QHBoxLayout()
-        self.pg_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/xyz_proteinGroups.txt')
+        self.pg_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/kum_proteinGroups.txt')
         self.pg_path.setPlaceholderText('proteinGroups.txt')
         browse_button = QtGui.QPushButton('Browse...')
         browse_button.clicked.connect(lambda: self.pg_path.setText(QtGui.QFileDialog.getOpenFileName()[0]))
