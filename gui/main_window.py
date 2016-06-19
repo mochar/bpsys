@@ -1,4 +1,5 @@
 import math
+import re
 
 from PySide import QtCore, QtGui
 import pyqtgraph
@@ -35,12 +36,6 @@ class LoadProteinGroupsDialog(QtGui.QDialog):
         self.error_message.hide()
         self.layout.addWidget(self.error_message)
         
-        # Horizontal line
-        line = QtGui.QFrame(self)
-        line.setFrameShape(QtGui.QFrame.HLine)
-        line.setFrameShadow(QtGui.QFrame.Sunken)
-        self.layout.addWidget(line)
-        
         # Sample names
         samples_layout = QtGui.QHBoxLayout()
         self.layout.addLayout(samples_layout)
@@ -61,6 +56,27 @@ class LoadProteinGroupsDialog(QtGui.QDialog):
         self.replicas_box.toggled.connect(self.show_samples)
         self.layout.addWidget(self.swap_check)
         
+        # ID regex
+        self.regex_box = QtGui.QGroupBox('ID regex')
+        self.regex_box.setLayout(QtGui.QVBoxLayout())
+        self.regex_box.hide()
+        regex_layout = QtGui.QHBoxLayout()
+        self.regex_box.layout().addLayout(regex_layout)
+        self.regex_edit = QtGui.QLineEdit('\|(.+)\|')
+        self.regex_edit.setPlaceholderText('Laat leeg als eiwit ID\'s kloppen.')
+        update_regex = QtGui.QPushButton('Update')
+        update_regex.clicked.connect(self.super_mega_update)
+        regex_layout.addWidget(self.regex_edit)
+        regex_layout.addWidget(update_regex)
+        lists_layout = QtGui.QHBoxLayout()
+        self.regex_box.layout().addLayout(lists_layout)
+        self.pg_ids = QtGui.QListWidget(self)
+        self.pg_ids.currentTextChanged.connect(self.update_regex_list)
+        self.protein_ids = QtGui.QListWidget(self)
+        lists_layout.addWidget(self.pg_ids, 3)
+        lists_layout.addWidget(self.protein_ids, 1)
+        self.layout.addWidget(self.regex_box)
+        
         # Dialog buttons
         buttons = QtGui.QDialogButtonBox(
             QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel,
@@ -68,6 +84,22 @@ class LoadProteinGroupsDialog(QtGui.QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         self.layout.addWidget(buttons)
+        
+    def show_protein_ids(self):
+        for protein_group in self.analysis.protein_groups.head()['protein_ids'].iteritems():
+            QtGui.QListWidgetItem(protein_group[1], self.pg_ids)
+            
+    def super_mega_update(self):
+        protein_ids = ''.join([str(i.text()) for i in self.pg_ids.selectedItems()])
+        self.update_regex_list(protein_ids)
+
+    def update_regex_list(self, protein_ids):
+        self.protein_ids.clear()
+        regex = self.regex_edit.text() or self.analysis.id_regex
+        regex = re.compile(regex)
+        for protein_id in protein_ids.split(';'):
+            putative_id = regex.findall(protein_id)[0]
+            QtGui.QListWidgetItem(putative_id, self.protein_ids)
         
     def empty_layout(self, layout):
         for i in reversed(range(layout.count())): 
@@ -86,12 +118,15 @@ class LoadProteinGroupsDialog(QtGui.QDialog):
             self.analysis.load_data()
         except:
             self.samples_box.setEnabled(False)
+            self.regex_box.hide()
             self.error_message.setText('Invalid')
             self.error_message.show()
             return
         self.error_message.hide()
         self.samples_box.setEnabled(True)
+        self.regex_box.show()
         self.show_samples()
+        self.show_protein_ids()
         
     def empty(self):
         self.empty_layout(self.samples_box.layout())
@@ -128,7 +163,6 @@ class LoadProteinGroupsDialog(QtGui.QDialog):
                 self.replica_combos.append(replica_combobox)
                 replica_combobox.setCurrentIndex(i + num)
             else:
-                self.sample_combos.append(replica_combobox)
                 replica_combobox.setCurrentIndex(i)
             
             layout.addWidget(checkbox)
@@ -144,150 +178,8 @@ class LoadProteinGroupsDialog(QtGui.QDialog):
         replicas = [combo.currentText() for combo in dialog.replica_combos]
         analysis.samples = [sample for check, sample in zip(dialog.checkboxes, samples) if check.isChecked()]
         analysis.replicas = [replica for check, replica in zip(dialog.checkboxes, replicas) if check.isChecked()]
+        analysis.id_regex = dialog.regex_edit.text()
         return result == QtGui.QDialog.Accepted
-
-
-class StartAnalysisDialog(QtGui.QDialog):
-    def __init__(self, parent):
-        super(StartAnalysisDialog, self).__init__(parent=parent)
-        self.set_up()
-        
-    def set_up(self):
-        self.layout = QtGui.QVBoxLayout()
-        self.setLayout(self.layout)
-        
-        self.set_up_protein_groups()
-        self.set_up_significance()
-        self.set_up_cluster()
-        self.set_up_go()
-        
-        # Dialog buttons
-        buttons = QtGui.QDialogButtonBox(
-            QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel,
-            QtCore.Qt.Horizontal, self)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        self.layout.addWidget(buttons)
-        
-    def set_up_protein_groups(self):
-        group_box = QtGui.QGroupBox('Protein groups')
-        self.layout.addWidget(group_box)
-        layout = QtGui.QVBoxLayout()
-        group_box.setLayout(layout)
-        
-        # proteinGroups.txt
-        pg_layout = QtGui.QHBoxLayout()
-        self.pg_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/kum_proteinGroups.txt')
-        self.pg_path.setPlaceholderText('proteinGroups.txt')
-        browse_button = QtGui.QPushButton('Browse...')
-        browse_button.clicked.connect(lambda: self.pg_path.setText(QtGui.QFileDialog.getOpenFileName()[0]))
-        pg_layout.addWidget(QtGui.QLabel('proteinGroups.txt'))
-        pg_layout.addWidget(self.pg_path)
-        pg_layout.addWidget(browse_button)
-        layout.addLayout(pg_layout)
-        
-        # ID regex
-        re_layout = QtGui.QHBoxLayout()
-        self.id_regex = QtGui.QLineEdit('\|(.+)\|')
-        self.id_regex.setPlaceholderText('.*')
-        re_layout.addWidget(QtGui.QLabel('ID regex'))
-        re_layout.addWidget(self.id_regex)
-        layout.addLayout(re_layout)
-        
-    def set_up_significance(self):
-        group_box = QtGui.QGroupBox('Significantie')
-        self.layout.addWidget(group_box)
-        layout = QtGui.QVBoxLayout()
-        group_box.setLayout(layout)
-        
-        # Radio buttons
-        radio_layout = QtGui.QHBoxLayout()
-        self.sig_a_radio = QtGui.QRadioButton('Significance-A')
-        self.sig_a_radio.clicked.connect(lambda: self.bin_size_edit.setDisabled(True))
-        self.sig_b_radio = QtGui.QRadioButton('Significance-B')
-        self.sig_b_radio.setChecked(True)
-        self.sig_b_radio.clicked.connect(lambda: self.bin_size_edit.setDisabled(False))
-        radio_layout.addWidget(self.sig_a_radio)
-        radio_layout.addWidget(self.sig_b_radio)
-        layout.addLayout(radio_layout)
-        
-        # Widgets
-        form_layout = QtGui.QFormLayout()
-        self.p_value_edit = QtGui.QLineEdit('0.05')
-        form_layout.addRow('P-value', self.p_value_edit)
-        self.bin_size_edit = QtGui.QLineEdit('300')
-        form_layout.addRow('Bin size', self.bin_size_edit)
-        layout.addLayout(form_layout)
-    
-    def set_up_go(self):
-        group_box = QtGui.QGroupBox('GO Enrichment')
-        self.layout.addWidget(group_box)
-        layout = QtGui.QVBoxLayout()
-        group_box.setLayout(layout)
-        
-        # GO DAG database
-        go_db_layout = QtGui.QHBoxLayout()
-        self.go_db_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/go/go-basic.obo')
-        browse_button = QtGui.QPushButton('Browse...')
-        browse_button.clicked.connect(lambda: self.go_db_path.setText(QtGui.QFileDialog().getOpenFileName()[0]))
-        go_db_layout.addWidget(QtGui.QLabel('Database'))
-        go_db_layout.addWidget(self.go_db_path)
-        go_db_layout.addWidget(browse_button)
-        layout.addLayout(go_db_layout)
-        
-        # Association table uniprot
-        ass_layout = QtGui.QHBoxLayout()
-        self.ass_path = QtGui.QLineEdit('/home/mochar/Documenten/school/bpsys/data/go/gene_association.goa_human')
-        browse_button = QtGui.QPushButton('Browse...')
-        browse_button.clicked.connect(lambda: self.ass_path.setText(QtGui.QFileDialog().getOpenFileName()[0]))
-        ass_layout.addWidget(QtGui.QLabel('Associations'))
-        ass_layout.addWidget(self.ass_path)
-        ass_layout.addWidget(browse_button)
-        layout.addLayout(ass_layout)
-        
-        # P-value
-        form_layout = QtGui.QFormLayout()
-        self.p_value_go_edit = QtGui.QLineEdit('0.05')
-        form_layout.addRow('P-value', self.p_value_go_edit)
-        self.go_combo = QtGui.QComboBox()
-        self.go_combo.addItem('Molecular function')
-        self.go_combo.addItem('Biological process')
-        self.go_combo.addItem('Cellular component')
-        form_layout.addRow('Ontology', self.go_combo)
-        layout.addLayout(form_layout)
-    
-    def set_up_cluster(self):
-        group_box = QtGui.QGroupBox('Clusters')
-        self.layout.addWidget(group_box)
-        layout = QtGui.QVBoxLayout()
-        group_box.setLayout(layout)
-
-        form_layout = QtGui.QFormLayout()
-        self.linkage_combo = QtGui.QComboBox()
-        self.linkage_combo.addItem('average')
-        self.linkage_combo.addItem('single')
-        self.linkage_combo.addItem('complete')
-        self.linkage_combo.addItem('centroid')
-        form_layout.addRow('Linkage', self.linkage_combo)
-        self.num_clusters_edit = QtGui.QLineEdit('20')
-        form_layout.addRow('Aantal', self.num_clusters_edit)
-        layout.addLayout(form_layout)
-        
-    @staticmethod
-    def get_parameters(parent, analysis):
-        dialog = StartAnalysisDialog(parent)
-        result = dialog.exec_()
-        analysis.pg_path = dialog.pg_path.text()
-        analysis.ass_path = dialog.ass_path.text()
-        analysis.id_regex = dialog.id_regex.text()
-        analysis.database_path = dialog.go_db_path.text()
-        analysis.bin_size = int(dialog.bin_size_edit.text())
-        analysis.p_value = float(dialog.p_value_edit.text())
-        analysis.p_value_go = float(dialog.p_value_go_edit.text())
-        analysis.ontology = dialog.go_combo.currentText()
-        analysis.num_clusters = int(dialog.num_clusters_edit.text())
-        analysis.linkage = dialog.linkage_combo.currentText()
-        return (analysis, result == QtGui.QDialog.Accepted)
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -304,11 +196,8 @@ class MainWindow(QtGui.QMainWindow):
         
     def set_up(self):
         self.init_menu()
-        self.statusBar().showMessage('Ready')
-        
         w = QtGui.QWidget()
         self.setCentralWidget(w)
-        
         layout = QtGui.QVBoxLayout()
         w.setLayout(layout)
         
@@ -325,6 +214,5 @@ class MainWindow(QtGui.QMainWindow):
     def start(self):
         ok = LoadProteinGroupsDialog.get_file_info(self, self.analysis)
         if ok:
-            self.statusBar().showMessage(':^)')
             central_widget = CentralWidget(self.analysis, self)
             self.setCentralWidget(central_widget)

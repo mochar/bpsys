@@ -1,5 +1,3 @@
-from collections import namedtuple
-import pdb
 import re
 
 from PySide import QtCore, QtGui
@@ -63,6 +61,9 @@ class GOWidget(QtGui.QWidget):
         self.analysis = analysis
         self.node_size = (130, 65)
         self.parent_count = 15
+        ratio_cols = ['log_ratio_{}'.format(sample) for sample in self.analysis.samples] 
+        self._max = self.analysis.protein_groups[ratio_cols].max().max()
+        self._min = self.analysis.protein_groups[ratio_cols].min().min()
         self.set_up()
         
     def set_up(self):
@@ -120,16 +121,18 @@ class GOWidget(QtGui.QWidget):
         cols = ['protein_ids']
         cols += ['log_ratio_{}'.format(sample) for sample in self.analysis.samples]
         dtype = [('Eiwit', object)] + [(col, float) for col in cols][1:]
-        data = np.array(
-                [(regex.findall(row[0].split(';')[0])[0], float(row[1]), float(row[2]), float(row[3]))
-                 for row in term.proteins[cols].as_matrix()], dtype=dtype)
+        data = []
+        for row in term.proteins[cols].as_matrix():
+            id = regex.findall(row[0].split(';')[0])[0]
+            data.append(tuple([id] + [float(x) for x in row[1:]]))
+        data = np.array(data, dtype=dtype)
         self.proteins_table.setData(data)
 
         for i in range(self.proteins_table.rowCount()):
             for j, sample in enumerate(self.analysis.samples, 1):
                 item = self.proteins_table.item(i, j)
                 ratio = float(item.text())
-                item.setBackground(self.ratio_to_color(sample, ratio))
+                item.setBackground(self.ratio_to_color(ratio))
 
     def create_graph(self, go_id):
         done = []
@@ -167,13 +170,10 @@ class GOWidget(QtGui.QWidget):
         max_ = max([len(term.proteins) for term in self.analysis.go_terms.values()])
         return self.color_map.map([size / max_], mode='qcolor')[0]
 
-    def ratio_to_color(self, sample, ratio):
-        col = 'log_ratio_{}'.format(sample)
+    def ratio_to_color(self, ratio):
         if ratio > 0:
-            max_ = self.analysis.protein_groups[col].max()
-            return QtGui.QColor.fromRgbF(ratio / max_, 0, 0, .7)
-        min_ = self.analysis.protein_groups[col].min()
-        return QtGui.QColor.fromRgbF(0, ratio / min_, 0, .7)
+            return QtGui.QColor.fromRgbF(ratio / self._max, 0, 0, .7)
+        return QtGui.QColor.fromRgbF(0, ratio / self._min, 0, .7)
      
     def create_graph_scene(self):
         scene = QtGui.QGraphicsScene(self)
