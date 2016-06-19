@@ -104,6 +104,7 @@ class GOWidget(QtGui.QWidget):
         splitter.addWidget(go_table)
         splitter.addWidget(self.proteins_table)
         splitter.addWidget(graph_container)
+        splitter.setSizes([1, 1, 1])
         layout.addWidget(splitter)
         
     def select_term(self, index):

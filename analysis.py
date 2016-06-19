@@ -192,10 +192,9 @@ class Analysis(object):
             yield
 
     def cluster(self):
-        cols = list(self.protein_groups)
-        ratio_cols = [col for col in cols if col.startswith('log_ratio_')]
-        data = self.protein_groups[ratio_cols]
-        z = linkage(data, method=self.linkage)
-        clusters = fcluster(z, self.num_clusters, 'maxclust')
-        self.protein_groups['cluster'] = clusters
-
+        ratio_cols = ['log_ratio_{}'.format(sample) for sample in self.samples]
+        significant = self.protein_groups[self.protein_groups.significant == True]
+        data = significant[ratio_cols]
+        self.z = linkage(data, method=self.linkage)
+        clusters = fcluster(self.z, self.num_clusters, 'maxclust')
+        self.protein_groups.ix[self.protein_groups.significant == True, 'cluster'] = clusters
