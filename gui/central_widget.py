@@ -5,6 +5,14 @@ from PySide import QtCore, QtGui
 from .significance_widget import SignificanceWidget
 from .clusters_widget import ClustersWidget
 from .go_widget import GOWidget
+from .parameters import Ui_Form
+
+
+class ParametersWidget(QtGui.QWidget, Ui_Form):
+    def __init__(self, parent):
+        super(ParametersWidget, self).__init__(parent)
+        self.setupUi(self)
+        self.p_value_edit.hide()
 
 
 class AnalysisWorker(QtCore.QObject):
@@ -74,6 +82,7 @@ class CentralWidget(QtGui.QWidget):
     
     def set_up(self):
         self.tab_widget = QtGui.QTabWidget(self)
+        self.tab_widget.addTab(ParametersWidget(self), 'Parameters')
         self.tab_widget.addTab(SignificanceWidget(self, self.analysis), 'Significantie')
         self.tab_widget.addTab(ClustersWidget(self, self.analysis), 'Clusters')
         self.tab_widget.addTab(GOWidget(self, self.analysis), 'GO Enrichment')

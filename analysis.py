@@ -36,6 +36,7 @@ class Analysis(object):
         headers = list(pd.read_table(file_path, index_col=0, nrows=1))
         ratios = [header for header in headers if header.startswith('Ratio H/L normalized ')]
         self.samples = [ratio.split()[-1] for ratio in ratios] # X, Y, Z
+        self.replicas = []
         ratios = {header: 'ratio_{}'.format(header.split()[-1]) for header in ratios}
         intensities = {'Intensity {}'.format(sample): 'intensity_{}'.format(sample) 
                        for sample in self.samples}
@@ -78,8 +79,8 @@ class Analysis(object):
     def load_data(self, file_path=None):
         if file_path is None:
             file_path = self.pg_path
-        columns = self._find_column_names(file_path)
         try:
+            columns = self._find_column_names(file_path)
             self.protein_groups = pd.read_table(file_path, usecols=columns.keys())
         except ValueError: 
             raise Exception('Data file is missing columns.')

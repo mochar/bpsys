@@ -1,7 +1,150 @@
+import math
+
 from PySide import QtCore, QtGui
 import pyqtgraph
 
 from .central_widget import CentralWidget
+
+
+class LoadProteinGroupsDialog(QtGui.QDialog):
+    def __init__(self, parent, analysis):
+        super(LoadProteinGroupsDialog, self).__init__(parent=parent)
+        self.analysis = analysis
+        self.resize(400, 100)
+        self.set_up()
+        
+    def set_up(self):
+        self.layout = QtGui.QVBoxLayout()
+        self.setLayout(self.layout)
+        
+        # File selection
+        pg_box = QtGui.QGroupBox('proteinGroups.txt')
+        pg_box.setLayout(QtGui.QHBoxLayout())
+        self.pg_path_edit = QtGui.QLineEdit()
+        browse_button = QtGui.QPushButton('Browse...')
+        browse_button.clicked.connect(self.load_file)
+        pg_box.layout().addWidget(self.pg_path_edit)
+        pg_box.layout().addWidget(browse_button)
+        self.layout.addWidget(pg_box)
+        
+        # Error message
+        self.error_message = QtGui.QLabel('')
+        palette = QtGui.QPalette()
+        palette.setColor(QtGui.QPalette.Foreground, QtCore.Qt.red)
+        self.error_message.setPalette(palette)
+        self.error_message.hide()
+        self.layout.addWidget(self.error_message)
+        
+        # Horizontal line
+        line = QtGui.QFrame(self)
+        line.setFrameShape(QtGui.QFrame.HLine)
+        line.setFrameShadow(QtGui.QFrame.Sunken)
+        self.layout.addWidget(line)
+        
+        # Sample names
+        samples_layout = QtGui.QHBoxLayout()
+        self.layout.addLayout(samples_layout)
+
+        self.samples_box = QtGui.QGroupBox('Samples')
+        self.samples_box.setLayout(QtGui.QVBoxLayout())
+        samples_layout.addWidget(self.samples_box)
+        
+        self.replicas_box = QtGui.QGroupBox('Replica\'s')
+        self.replicas_box.setLayout(QtGui.QVBoxLayout())
+        self.replicas_box.setCheckable(True)
+        self.replicas_box.setChecked(False)
+        samples_layout.addWidget(self.replicas_box)
+        
+        self.swap_check = QtGui.QCheckBox('Label swap?')
+        self.swap_check.setEnabled(False)
+        self.replicas_box.toggled.connect(self.swap_check.setEnabled)
+        self.replicas_box.toggled.connect(self.show_samples)
+        self.layout.addWidget(self.swap_check)
+        
+        # Dialog buttons
+        buttons = QtGui.QDialogButtonBox(
+            QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel,
+            QtCore.Qt.Horizontal, self)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        self.layout.addWidget(buttons)
+        
+    def empty_layout(self, layout):
+        for i in reversed(range(layout.count())): 
+            item = layout.takeAt(i)
+            widget = item.widget()
+            if widget is None:
+                self.empty_layout(item.layout())
+            else:
+                widget.deleteLater()
+        
+    def load_file(self):
+        file_name, _ = QtGui.QFileDialog.getOpenFileName()
+        self.pg_path_edit.setText(file_name)
+        self.analysis.pg_path = file_name
+        try:
+            self.analysis.load_data()
+        except:
+            self.samples_box.setEnabled(False)
+            self.error_message.setText('Invalid')
+            self.error_message.show()
+            return
+        self.error_message.hide()
+        self.samples_box.setEnabled(True)
+        self.show_samples()
+        
+    def empty(self):
+        self.empty_layout(self.samples_box.layout())
+        self.empty_layout(self.replicas_box.layout())
+        self.sample_combos = []
+        self.replica_combos = []
+        self.checkboxes = []
+        
+    def show_samples(self):
+        self.empty()
+        replicas = self.replicas_box.isChecked()
+        num = math.floor(len(self.analysis.samples) / 2) if replicas else len(self.analysis.samples)
+        for i in range(num):
+            layout = QtGui.QHBoxLayout()
+            
+            # Check box to activate or deactivate sample + replica
+            checkbox = QtGui.QCheckBox()
+            checkbox.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Preferred))
+            checkbox.setChecked(True)
+            self.checkboxes.append(checkbox)
+            
+            #  Sample box
+            sample_combobox = QtGui.QComboBox()
+            checkbox.toggled.connect(sample_combobox.setEnabled)
+            sample_combobox.addItems(self.analysis.samples)
+            sample_combobox.setCurrentIndex(i)
+            self.sample_combos.append(sample_combobox)
+           
+            # Replica box
+            replica_combobox = QtGui.QComboBox()
+            checkbox.toggled.connect(replica_combobox.setEnabled)
+            replica_combobox.addItems(self.analysis.samples)
+            if replicas:
+                self.replica_combos.append(replica_combobox)
+                replica_combobox.setCurrentIndex(i + num)
+            else:
+                self.sample_combos.append(replica_combobox)
+                replica_combobox.setCurrentIndex(i)
+            
+            layout.addWidget(checkbox)
+            layout.addWidget(sample_combobox)
+            self.samples_box.layout().addLayout(layout)
+            self.replicas_box.layout().addWidget(replica_combobox)
+        
+    @staticmethod
+    def get_file_info(parent, analysis):
+        dialog = LoadProteinGroupsDialog(parent, analysis)
+        result = dialog.exec_()
+        samples = [combo.currentText() for combo in dialog.sample_combos]
+        replicas = [combo.currentText() for combo in dialog.replica_combos]
+        analysis.samples = [sample for check, sample in zip(dialog.checkboxes, samples) if check.isChecked()]
+        analysis.replicas = [replica for check, replica in zip(dialog.checkboxes, replicas) if check.isChecked()]
+        return result == QtGui.QDialog.Accepted
 
 
 class StartAnalysisDialog(QtGui.QDialog):
@@ -180,7 +323,7 @@ class MainWindow(QtGui.QMainWindow):
         file_menu.addAction(open_action)
 
     def start(self):
-        self.analysis, ok = StartAnalysisDialog.get_parameters(self, self.analysis)
+        ok = LoadProteinGroupsDialog.get_file_info(self, self.analysis)
         if ok:
             self.statusBar().showMessage(':^)')
             central_widget = CentralWidget(self.analysis, self)
