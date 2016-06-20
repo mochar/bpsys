@@ -27,30 +27,34 @@ class ClustersWidget(QtGui.QWidget):
             # layout.addWidget(QtGui.QLabel(txt))
 
         # Data
-        cols = [('log_ratio_{}'.format(sample), 'log_ratio_{}'.format(replica))
-                for sample, replica 
-                in zip(self.analysis.samples, self.analysis.replicas)]
-        cols = [s for group in cols for s in group]
+        if self.analysis.replicas:
+            cols = [('log_ratio_{}'.format(sample), 'log_ratio_{}'.format(replica))
+                    for sample, replica 
+                    in zip(self.analysis.samples, self.analysis.replicas)]
+            cols = [s for group in cols for s in group]
+        else:
+            cols = ['log_ratio_{}'.format(sample) for sample in self.analysis.samples]
         D = significant.as_matrix(cols)
         
         # Compute and plot dendrogram.
         fig = pylab.figure(figsize=(8,8))
-        ax1 = fig.add_axes([0.09, 0.1, 0.2, 0.8])
+        ax1 = fig.add_axes([0.01, 0.01, 0.2, 0.95])
         Z1 = dendrogram(self.analysis.z, color_threshold=self.analysis.distance_treshold,
                         orientation='left', no_labels=True)
+        plt.axvline(x=self.analysis.distance_treshold, color='k')
         ax1.set_xticks([])
         ax1.set_yticks([])
 
         # Plot distance matrix.
-        axmatrix = fig.add_axes([0.3, 0.1, 0.6, 0.8])
+        axmatrix = fig.add_axes([0.23, 0.01, 0.65, 0.95])
         idx1 = Z1['leaves']
         D = D[idx1,:]
-        im = axmatrix.matshow(D, aspect='auto', origin='lower', cmap=pylab.cm.YlGnBu)
+        im = axmatrix.matshow(D, aspect='auto', origin='lower', cmap=pylab.cm.RdYlGn)
         axmatrix.set_xticks([])
         axmatrix.set_yticks([])
 
         # Plot colorbar.
-        axcolor = fig.add_axes([0.91, 0.1, 0.02, 0.8])
+        axcolor = fig.add_axes([0.91, 0.01, 0.02, 0.95])
         pylab.colorbar(im, cax=axcolor)
         
         # Add widget
