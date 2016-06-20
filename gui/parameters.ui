@@ -194,14 +194,14 @@
         <item>
          <widget class="QLabel" name="label_5">
           <property name="text">
-           <string>Aantal</string>
+           <string>Treshold</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="num_clusters_edit">
+         <widget class="QLineEdit" name="distance_edit">
           <property name="text">
-           <string>20</string>
+           <string>2</string>
           </property>
          </widget>
         </item>

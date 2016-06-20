@@ -58,7 +58,7 @@ class ParametersWidget(QtGui.QWidget, Ui_Form):
     def run_cluster(self):
         self.show_load.emit(True)
         self.go_run.setEnabled(True)
-        self.a.num_clusters = int(self.num_clusters_edit.text())
+        self.a.distance_treshold = int(self.distance_edit.text())
         self.a.linkage = self.linkage_combo.currentText()
         self.a.cluster()
         self.add_tab.emit(2)

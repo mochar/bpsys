@@ -179,6 +179,8 @@ class LoadProteinGroupsDialog(QtGui.QDialog):
         analysis.samples = [sample for check, sample in zip(dialog.checkboxes, samples) if check.isChecked()]
         analysis.replicas = [replica for check, replica in zip(dialog.checkboxes, replicas) if check.isChecked()]
         analysis.id_regex = dialog.regex_edit.text()
+        if dialog.swap_check.isEnabled():
+            analysis.swap_replicas()
         return result == QtGui.QDialog.Accepted
 
 

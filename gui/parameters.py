@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'parameters.ui'
 #
-# Created: Mon Jun 20 10:41:28 2016
+# Created: Mon Jun 20 11:29:28 2016
 #      by: pyside-uic 0.2.15 running on PySide 1.2.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -99,9 +99,9 @@ class Ui_Form(object):
         self.label_5 = QtGui.QLabel(self.groupBox_3)
         self.label_5.setObjectName("label_5")
         self.verticalLayout_6.addWidget(self.label_5)
-        self.num_clusters_edit = QtGui.QLineEdit(self.groupBox_3)
-        self.num_clusters_edit.setObjectName("num_clusters_edit")
-        self.verticalLayout_6.addWidget(self.num_clusters_edit)
+        self.distance_edit = QtGui.QLineEdit(self.groupBox_3)
+        self.distance_edit.setObjectName("distance_edit")
+        self.verticalLayout_6.addWidget(self.distance_edit)
         spacerItem2 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         self.verticalLayout_6.addItem(spacerItem2)
         self.horizontalLayout_4 = QtGui.QHBoxLayout()
@@ -208,8 +208,8 @@ class Ui_Form(object):
         self.linkage_combo.setItemText(1, QtGui.QApplication.translate("Form", "single", None, QtGui.QApplication.UnicodeUTF8))
         self.linkage_combo.setItemText(2, QtGui.QApplication.translate("Form", "complete", None, QtGui.QApplication.UnicodeUTF8))
         self.linkage_combo.setItemText(3, QtGui.QApplication.translate("Form", "centroid", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_5.setText(QtGui.QApplication.translate("Form", "Aantal", None, QtGui.QApplication.UnicodeUTF8))
-        self.num_clusters_edit.setText(QtGui.QApplication.translate("Form", "20", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_5.setText(QtGui.QApplication.translate("Form", "Treshold", None, QtGui.QApplication.UnicodeUTF8))
+        self.distance_edit.setText(QtGui.QApplication.translate("Form", "2", None, QtGui.QApplication.UnicodeUTF8))
         self.cluster_run.setText(QtGui.QApplication.translate("Form", "Run", None, QtGui.QApplication.UnicodeUTF8))
         self.clust_run_all.setText(QtGui.QApplication.translate("Form", "Run tot hier", None, QtGui.QApplication.UnicodeUTF8))
         self.groupBox.setTitle(QtGui.QApplication.translate("Form", "GO Enrichment", None, QtGui.QApplication.UnicodeUTF8))

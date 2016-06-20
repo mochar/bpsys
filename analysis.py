@@ -20,7 +20,7 @@ class Analysis(object):
         self.id_regex = '.*'
         self.bin_size = 300
         self.p_value = 0.05
-        self.num_clusters = 20
+        self.distance_treshold = 2
         self.linkage = 'average'
         self.p_value_go = 0.05
         self._ontology = 'Molecular function'
@@ -194,8 +194,14 @@ class Analysis(object):
 
     def cluster(self):
         ratio_cols = ['log_ratio_{}'.format(sample) for sample in self.samples]
+        ratio_cols.extend(['log_ratio_{}'.format(replica) for replica in self.replicas])
         significant = self.protein_groups[self.protein_groups.significant == True]
         data = significant[ratio_cols]
         self.z = linkage(data, method=self.linkage)
-        clusters = fcluster(self.z, self.num_clusters, 'maxclust')
+        clusters = fcluster(self.z, self.distance_treshold, 'distance')
         self.protein_groups.ix[self.protein_groups.significant == True, 'cluster'] = clusters
+
+    def swap_replicas(self):
+        cols = ['log_ratio_{}'.format(replica) for replica in self.replicas]
+        self.protein_groups[cols] = self.protein_groups[cols] * -1
+        
