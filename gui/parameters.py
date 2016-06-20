@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'parameters.ui'
 #
-# Created: Sun Jun 19 20:24:01 2016
+# Created: Mon Jun 20 10:41:28 2016
 #      by: pyside-uic 0.2.15 running on PySide 1.2.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -14,18 +14,12 @@ class Ui_Form(object):
         Form.setObjectName("Form")
         Form.setWindowModality(QtCore.Qt.NonModal)
         Form.resize(763, 454)
-        self.verticalLayout = QtGui.QVBoxLayout(Form)
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.stack = QtGui.QStackedWidget(Form)
-        self.stack.setObjectName("stack")
-        self.parameters_page = QtGui.QWidget()
-        self.parameters_page.setObjectName("parameters_page")
-        self.verticalLayout_2 = QtGui.QVBoxLayout(self.parameters_page)
-        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.gridLayout = QtGui.QGridLayout(Form)
+        self.gridLayout.setObjectName("gridLayout")
         self.horizontalLayout_2 = QtGui.QHBoxLayout()
         self.horizontalLayout_2.setSizeConstraint(QtGui.QLayout.SetDefaultConstraint)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        self.groupBox_2 = QtGui.QGroupBox(self.parameters_page)
+        self.groupBox_2 = QtGui.QGroupBox(Form)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -83,7 +77,7 @@ class Ui_Form(object):
         self.horizontalLayout_3.addWidget(self.sig_run)
         self.verticalLayout_3.addLayout(self.horizontalLayout_3)
         self.horizontalLayout_2.addWidget(self.groupBox_2)
-        self.groupBox_3 = QtGui.QGroupBox(self.parameters_page)
+        self.groupBox_3 = QtGui.QGroupBox(Form)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -115,6 +109,7 @@ class Ui_Form(object):
         spacerItem3 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_4.addItem(spacerItem3)
         self.cluster_run = QtGui.QPushButton(self.groupBox_3)
+        self.cluster_run.setEnabled(False)
         self.cluster_run.setObjectName("cluster_run")
         self.horizontalLayout_4.addWidget(self.cluster_run)
         self.clust_run_all = QtGui.QPushButton(self.groupBox_3)
@@ -122,7 +117,7 @@ class Ui_Form(object):
         self.horizontalLayout_4.addWidget(self.clust_run_all)
         self.verticalLayout_6.addLayout(self.horizontalLayout_4)
         self.horizontalLayout_2.addWidget(self.groupBox_3)
-        self.groupBox = QtGui.QGroupBox(self.parameters_page)
+        self.groupBox = QtGui.QGroupBox(Form)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -177,6 +172,7 @@ class Ui_Form(object):
         spacerItem5 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_5.addItem(spacerItem5)
         self.go_run = QtGui.QPushButton(self.groupBox)
+        self.go_run.setEnabled(False)
         self.go_run.setObjectName("go_run")
         self.horizontalLayout_5.addWidget(self.go_run)
         self.go_run_all = QtGui.QPushButton(self.groupBox)
@@ -187,27 +183,11 @@ class Ui_Form(object):
         self.horizontalLayout_2.setStretch(0, 2)
         self.horizontalLayout_2.setStretch(1, 2)
         self.horizontalLayout_2.setStretch(2, 3)
-        self.verticalLayout_2.addLayout(self.horizontalLayout_2)
-        self.verticalLayout_2.setStretch(0, 9)
-        self.stack.addWidget(self.parameters_page)
-        self.loading_page = QtGui.QWidget()
-        self.loading_page.setObjectName("loading_page")
-        self.gridLayout_2 = QtGui.QGridLayout(self.loading_page)
-        self.gridLayout_2.setObjectName("gridLayout_2")
-        self.label_10 = QtGui.QLabel(self.loading_page)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Maximum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.label_10.sizePolicy().hasHeightForWidth())
-        self.label_10.setSizePolicy(sizePolicy)
-        self.label_10.setObjectName("label_10")
-        self.gridLayout_2.addWidget(self.label_10, 0, 0, 1, 1)
-        self.stack.addWidget(self.loading_page)
-        self.verticalLayout.addWidget(self.stack)
+        self.gridLayout.addLayout(self.horizontalLayout_2, 0, 0, 1, 1)
 
         self.retranslateUi(Form)
-        QtCore.QObject.connect(self.sig_a, QtCore.SIGNAL("toggled(bool)"), self.widget_2.setDisabled)
-        QtCore.QObject.connect(self.sig_b, QtCore.SIGNAL("toggled(bool)"), self.widget.setDisabled)
+        QtCore.QObject.connect(self.sig_a, QtCore.SIGNAL("toggled(bool)"), self.widget_2.setEnabled)
+        QtCore.QObject.connect(self.sig_b, QtCore.SIGNAL("toggled(bool)"), self.widget.setEnabled)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
@@ -245,5 +225,4 @@ class Ui_Form(object):
         self.go_combo.setItemText(2, QtGui.QApplication.translate("Form", "Cellular component", None, QtGui.QApplication.UnicodeUTF8))
         self.go_run.setText(QtGui.QApplication.translate("Form", "Run", None, QtGui.QApplication.UnicodeUTF8))
         self.go_run_all.setText(QtGui.QApplication.translate("Form", "Run tot hier", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_10.setText(QtGui.QApplication.translate("Form", "Loading...", None, QtGui.QApplication.UnicodeUTF8))
 
