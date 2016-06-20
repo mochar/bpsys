@@ -2,40 +2,33 @@ from PySide import QtCore, QtGui
 
 
 class PandasModel(QtCore.QAbstractTableModel):
-    def __init__(self, protein_groups, sample, color=None, parent=None):
+    def __init__(self, protein_groups, sample, max_p=None, parent=None):
         super(PandasModel, self).__init__(parent=parent)
 
-        cols = ['protein_ids', 'log_ratio_{}'.format(sample),
+        cols = ['id', 'protein_ids', 'log_ratio_{}'.format(sample),
                 'intensity_{}'.format(sample), 'p_{}'.format(sample)]
         data = protein_groups[cols]
-        data.columns = ['protein_ids', 'log_ratio', 'intensity', 'p-value']
-        if color == 'blue':
-            data = data[data['p-value'] > 0.05]
-        elif color == 'red':
-            data = data[data['p-value'].between(0.01, 0.05)]
-        elif color == 'yellow':
-            data = data[data['p-value'].between(0.001, 0.05)]
-        elif color == 'green':
-            data = data[data['p-value'] < 0.001]
+        if max_p is not None:
+            data = data[data['p_{}'.format(sample)] < max_p]
+        data.columns = ['id', 'protein_ids', 'log_ratio', 'intensity', 'p-value']
         self._data = data
 
     def rowCount(self, parent=None):
-        return len(self._data.values)
+        return len(self._data.index)
 
     def columnCount(self, parent=None):
-        return self._data.columns.size
+        return 4
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
                 protein_group = self._data.values[index.row()]
-                col = index.column()
-                return str(self._data.values[index.row()][index.column()])
+                return str(self._data.values[index.row()][index.column() + 1])
         return None
 
     def headerData(self, col, orientation, role):
         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-            return self._data.columns[col]
+            return self._data.columns[col + 1]
         return None
 
 

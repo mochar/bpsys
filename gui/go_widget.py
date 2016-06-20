@@ -71,20 +71,9 @@ class GOWidget(QtGui.QWidget):
         self.setLayout(layout)
  
         # Graph
-        graph_container = QtGui.QWidget()
-        self.graph_title = QtGui.QLabel('')
-        self.graph_title.setAlignment(QtCore.Qt.AlignHCenter)
-        font = QtGui.QFont()
-        font.setBold(True)
-        self.graph_title.setFont(font)
-        self.graph_title.setWordWrap(True)
         self.graph_widget = self.create_graph_widget()
         self.color_map = pg.ColorMap([0, 0.5, 1], [(1., 1., 1.),
             (1., 1., 0.), (1., 0.5, 0.)])
-        graph_layout = QtGui.QVBoxLayout()
-        graph_layout.addWidget(self.graph_title)
-        graph_layout.addWidget(self.graph_widget)
-        graph_container.setLayout(graph_layout)
 
         # Enriched GO terms
         go_table = pg.TableWidget()
@@ -97,30 +86,43 @@ class GOWidget(QtGui.QWidget):
         go_table.setData(data)
 
         # Proteins in selected GO term
+        proteins_container = QtGui.QWidget()
+        proteins_container.setLayout(QtGui.QVBoxLayout())
         self.proteins_table = pg.TableWidget()
         self.proteins_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.proteins_table.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
+        self.graph_title = QtGui.QLabel('')
+        self.graph_title.setAlignment(QtCore.Qt.AlignHCenter)
+        self.graph_title.setOpenExternalLinks(True)
+        font = QtGui.QFont()
+        font.setBold(True)
+        self.graph_title.setFont(font)
+        self.graph_title.setWordWrap(True)
+        self.show_graph_button = QtGui.QPushButton('Graph')
+        self.show_graph_button.clicked.connect(self.show_graph)
+        proteins_container.layout().addWidget(self.graph_title)
+        proteins_container.layout().addWidget(self.proteins_table)
+        proteins_container.layout().addWidget(self.show_graph_button)
             
         # Splitter with widgets
         splitter = QtGui.QSplitter(self)
         splitter.addWidget(go_table)
-        splitter.addWidget(self.proteins_table)
-        splitter.addWidget(graph_container)
+        splitter.addWidget(proteins_container)
         splitter.setSizes([1, 1, 1])
         layout.addWidget(splitter)
         
     def select_term(self, index):
-        go_id = index.sibling(index.row(), 0).data()
-        self.graph_title.setText(self.analysis.go_dag[go_id].name.upper())
-        self.graph = self.create_graph(go_id)
-        self.sug = self.create_sug_layout(self.graph)
-        self.graph_widget.setScene(self.create_graph_scene())
+        self.go_id = index.sibling(index.row(), 0).data()
+        title = self.analysis.go_dag[self.go_id].name.upper()
+        hyperlink = '<a href="http://amigo.geneontology.org/amigo/term/{}">{}</a>'
+        self.graph_title.setText(hyperlink.format(self.go_id, title))
 
         # Update table
         regex = re.compile(self.analysis.id_regex)
-        term = self.analysis.go_terms[go_id]
+        term = self.analysis.go_terms[self.go_id]
         cols = ['protein_ids']
         cols += ['log_ratio_{}'.format(sample) for sample in self.analysis.samples]
-        dtype = [('Eiwit', object)] + [(col, float) for col in cols][1:]
+        dtype = [('Eiwit', object)] + [(sample, float) for sample in self.analysis.samples]
         data = []
         for row in term.proteins[cols].as_matrix():
             id = regex.findall(row[0].split(';')[0])[0]
@@ -133,6 +135,13 @@ class GOWidget(QtGui.QWidget):
                 item = self.proteins_table.item(i, j)
                 ratio = float(item.text())
                 item.setBackground(self.ratio_to_color(ratio))
+                
+    def show_graph(self):
+        graph = self.create_graph(self.go_id)
+        sug = self.create_sug_layout(graph)
+        self.graph_widget.setScene(self.create_graph_scene(sug))
+        self.graph_widget.setWindowTitle(self.graph_title.text())
+        self.graph_widget.show()
 
     def create_graph(self, go_id):
         done = []
@@ -175,10 +184,10 @@ class GOWidget(QtGui.QWidget):
             return QtGui.QColor.fromRgbF(ratio / self._max, 0, 0, .7)
         return QtGui.QColor.fromRgbF(0, ratio / self._min, 0, .7)
      
-    def create_graph_scene(self):
+    def create_graph_scene(self, sug):
         scene = QtGui.QGraphicsScene(self)
         w, h = self.node_size
-        for i, layer in enumerate(self.sug.layers):
+        for i, layer in enumerate(sug.layers):
             for vertex in layer:
                 x, y = vertex.view.xy
                 try:
@@ -186,14 +195,14 @@ class GOWidget(QtGui.QWidget):
                 except AttributeError:
                     continue
                 color = self.term_to_color(vertex.data)
-                bold = i == len(self.sug.layers) - 1
+                bold = i == len(sug.layers) - 1
                 scene.addItem(Node(x, y, w, h, color, term, scene, bold))
-        for edge in self.sug.g.E():
+        for edge in sug.g.E():
             scene.addItem(self.create_edge_path(edge.view.splines, scene))
         return scene
         
     def create_graph_widget(self):
-        view = QtGui.QGraphicsView(self)
+        view = QtGui.QGraphicsView()
         view.setRenderHint(QtGui.QPainter.Antialiasing)
         return view
         
