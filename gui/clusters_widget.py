@@ -21,10 +21,6 @@ class ClustersWidget(QtGui.QWidget):
 
         pgs = self.analysis.protein_groups
         significant = pgs[pgs.significant == True]
-        groups = significant.groupby('cluster').groups
-        for cluster, rows in groups.items():
-            txt = 'Cluster {}: {} eiwitten'.format(cluster, len(rows))
-            # layout.addWidget(QtGui.QLabel(txt))
 
         # Data
         if self.analysis.replicas:

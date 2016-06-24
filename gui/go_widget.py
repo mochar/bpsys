@@ -6,6 +6,7 @@ from grandalf.layouts import SugiyamaLayout
 from grandalf.routing import route_with_splines, EdgeViewer
 import pyqtgraph as pg
 import numpy as np
+import matplotlib
 
 from .models import GOModel, TreeViewModel, TreeItem
 
@@ -61,10 +62,17 @@ class GOWidget(QtGui.QWidget):
         self.analysis = analysis
         self.node_size = (130, 65)
         self.parent_count = 15
-        ratio_cols = ['log_ratio_{}'.format(sample) for sample in self.analysis.samples] 
-        self._max = self.analysis.protein_groups[ratio_cols].max().max()
-        self._min = self.analysis.protein_groups[ratio_cols].min().min()
+        self.samples = analysis.samples + analysis.replicas
+        self.colmap = self._create_color_mapper()
         self.set_up()
+        
+    def _create_color_mapper(self):
+        ratio_cols = ['log_ratio_{}'.format(sample) for sample in self.samples] 
+        _max = self.analysis.protein_groups[ratio_cols].max().max()
+        _min = self.analysis.protein_groups[ratio_cols].min().min()
+        norm = matplotlib.colors.Normalize(vmin=_min, vmax=_max)
+        cmap = matplotlib.cm.RdYlGn
+        return matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
         
     def set_up(self):
         layout = QtGui.QHBoxLayout()
@@ -121,8 +129,8 @@ class GOWidget(QtGui.QWidget):
         regex = re.compile(self.analysis.id_regex)
         term = self.analysis.go_terms[self.go_id]
         cols = ['protein_ids']
-        cols += ['log_ratio_{}'.format(sample) for sample in self.analysis.samples]
-        dtype = [('Eiwit', object)] + [(sample, float) for sample in self.analysis.samples]
+        cols += ['log_ratio_{}'.format(sample) for sample in self.samples]
+        dtype = [('Eiwit', object)] + [(sample, float) for sample in self.samples]
         data = []
         for row in term.proteins[cols].as_matrix():
             id = regex.findall(row[0].split(';')[0])[0]
@@ -131,7 +139,7 @@ class GOWidget(QtGui.QWidget):
         self.proteins_table.setData(data)
 
         for i in range(self.proteins_table.rowCount()):
-            for j, sample in enumerate(self.analysis.samples, 1):
+            for j, sample in enumerate(self.samples, 1):
                 item = self.proteins_table.item(i, j)
                 ratio = float(item.text())
                 item.setBackground(self.ratio_to_color(ratio))
@@ -180,9 +188,7 @@ class GOWidget(QtGui.QWidget):
         return self.color_map.map([size / max_], mode='qcolor')[0]
 
     def ratio_to_color(self, ratio):
-        if ratio > 0:
-            return QtGui.QColor.fromRgbF(ratio / self._max, 0, 0, .7)
-        return QtGui.QColor.fromRgbF(0, ratio / self._min, 0, .7)
+        return QtGui.QColor.fromRgbF(*self.colmap.to_rgba(ratio))
      
     def create_graph_scene(self, sug):
         scene = QtGui.QGraphicsScene(self)
