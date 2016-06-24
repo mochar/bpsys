@@ -37,8 +37,8 @@ class ClustersWidget(QtGui.QWidget):
         D = significant.as_matrix(cols)
         
         # Compute and plot dendrogram.
-        fig = pylab.figure(figsize=(8,8), facecolor='white')
-        ax1 = fig.add_axes([0.01, 0.01, 0.2, 0.91])
+        self.fig = pylab.figure(figsize=(8,8), facecolor='white')
+        ax1 = self.fig.add_axes([0.01, 0.01, 0.2, 0.91])
         Z1 = dendrogram(self.analysis.z, color_threshold=self.analysis.distance_treshold,
                         orientation='left', no_labels=True)
         plt.axvline(x=self.analysis.distance_treshold, color='k')
@@ -46,7 +46,7 @@ class ClustersWidget(QtGui.QWidget):
         ax1.set_yticks([])
 
         # Plot distance matrix.
-        axmatrix = fig.add_axes([0.23, 0.01, 0.65, 0.91])
+        axmatrix = self.fig.add_axes([0.23, 0.01, 0.65, 0.91])
         idx1 = Z1['leaves']
         D = D[idx1,:]
         im = axmatrix.matshow(D, aspect='auto', origin='lower', cmap=pylab.cm.RdYlGn)
@@ -55,9 +55,9 @@ class ClustersWidget(QtGui.QWidget):
         axmatrix.set_yticks([])
 
         # Plot colorbar.
-        axcolor = fig.add_axes([0.91, 0.01, 0.02, 0.91])
+        axcolor = self.fig.add_axes([0.91, 0.01, 0.02, 0.91])
         pylab.colorbar(im, cax=axcolor)
         
         # Add widget
-        canvas = FigureCanvas(fig)
+        canvas = FigureCanvas(self.fig)
         layout.addWidget(canvas)

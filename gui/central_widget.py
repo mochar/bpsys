@@ -89,6 +89,7 @@ class CentralWidget(QtGui.QWidget):
         super(CentralWidget, self).__init__(parent=parent)
         self.analysis = analysis
         self.set_up()
+        self.set_up_menu()
         self.set_up_load()
         
     def set_up_load(self):
@@ -106,7 +107,21 @@ class CentralWidget(QtGui.QWidget):
         self.load_widget.hide()
         self.load_widget.layout().addWidget(self.load_gif_screen)
         self.layout().addWidget(self.load_widget)
-    
+        
+    def set_up_menu(self):
+        menubar = self.parent().menuBar()
+        save_menu = menubar.addMenu('Save')
+        
+        # Save cluster
+        self.save_clus_menu = save_menu.addMenu('Cluster')
+        self.save_clus_menu.setEnabled(False)
+        clus_png_action = QtGui.QAction('Als png', self)
+        clus_png_action.triggered.connect(lambda: self.save_figure('png'))
+        self.save_clus_menu.addAction(clus_png_action)
+        clus_svg_action = QtGui.QAction('Als svg', self)
+        clus_svg_action.triggered.connect(lambda: self.save_figure('svg'))
+        self.save_clus_menu.addAction(clus_svg_action)
+
     def set_up(self):
         # Init parameter widget
         parameters_widget = ParametersWidget(self, self.analysis)
@@ -128,27 +143,34 @@ class CentralWidget(QtGui.QWidget):
         self.load_widget.setVisible(show)
         
     def tab_changed(self, index):
-        if index in (0, 2):
-            self.corner_widget.hide()
-        else:
+        self.corner_widget.hide()
+        if index == 1:
             self.corner_widget.show()
         
     def search_protein(self):
         pg_id, ok = SearchDialog.get_search_pg_id(self, self.analysis)
         if ok:
             self.search_pg.emit(pg_id)
+            
+    def save_figure(self, extension):
+        file_name, _ = QtGui.QFileDialog.getSaveFileName(self)
+        if not file_name.endswith('.{}'.format(extension)):
+            file_name = '{}.{}'.format(file_name, extension)
+        self.tab_widget.widget(2).fig.savefig(file_name)
         
     def set_tabs(self, i):
         if i == 1:
             self.delete_tab(3)
             self.delete_tab(2)
             self.delete_tab(1)
+            self.save_clus_menu.setEnabled(False)
             significance_widget = SignificanceWidget(self, self.analysis)
             self.search_pg.connect(significance_widget.select_pg)
             self.tab_widget.addTab(significance_widget, 'Significantie')
         elif i == 2:
             self.delete_tab(3)
             self.delete_tab(2)
+            self.save_clus_menu.setEnabled(True)
             self.tab_widget.addTab(ClustersWidget(self, self.analysis), 'Clusters')
         elif i == 3:
             self.delete_tab(3)
