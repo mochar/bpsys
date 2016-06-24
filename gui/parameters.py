@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'parameters.ui'
 #
-# Created: Mon Jun 20 11:29:28 2016
+# Created: Fri Jun 24 23:02:09 2016
 #      by: pyside-uic 0.2.15 running on PySide 1.2.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -186,8 +186,8 @@ class Ui_Form(object):
         self.gridLayout.addLayout(self.horizontalLayout_2, 0, 0, 1, 1)
 
         self.retranslateUi(Form)
-        QtCore.QObject.connect(self.sig_a, QtCore.SIGNAL("toggled(bool)"), self.widget_2.setEnabled)
-        QtCore.QObject.connect(self.sig_b, QtCore.SIGNAL("toggled(bool)"), self.widget.setEnabled)
+        QtCore.QObject.connect(self.sig_a, QtCore.SIGNAL("toggled(bool)"), self.widget_2.setDisabled)
+        QtCore.QObject.connect(self.sig_b, QtCore.SIGNAL("toggled(bool)"), self.widget.setDisabled)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):

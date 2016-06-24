@@ -409,15 +409,15 @@
    <sender>sig_a</sender>
    <signal>toggled(bool)</signal>
    <receiver>widget_2</receiver>
-   <slot>setEnabled(bool)</slot>
+   <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>47</x>
-     <y>50</y>
+     <x>59</x>
+     <y>49</y>
     </hint>
     <hint type="destinationlabel">
-     <x>27</x>
-     <y>176</y>
+     <x>41</x>
+     <y>171</y>
     </hint>
    </hints>
   </connection>
@@ -425,15 +425,15 @@
    <sender>sig_b</sender>
    <signal>toggled(bool)</signal>
    <receiver>widget</receiver>
-   <slot>setEnabled(bool)</slot>
+   <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>133</x>
+     <x>33</x>
      <y>143</y>
     </hint>
     <hint type="destinationlabel">
-     <x>160</x>
-     <y>130</y>
+     <x>32</x>
+     <y>119</y>
     </hint>
    </hints>
   </connection>
