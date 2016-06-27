@@ -149,6 +149,7 @@ class GOWidget(QtGui.QWidget):
         sug = self.create_sug_layout(graph)
         self.graph_widget.setScene(self.create_graph_scene(sug))
         self.graph_widget.setWindowTitle(self.graph_title.text())
+        self.graph_widget.setWindowTitle('Graph')
         self.graph_widget.show()
 
     def create_graph(self, go_id):

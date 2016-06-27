@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'parameters.ui'
 #
-# Created: Fri Jun 24 23:02:09 2016
+# Created: Mon Jun 27 10:00:20 2016
 #      by: pyside-uic 0.2.15 running on PySide 1.2.2
 #
 # WARNING! All changes made in this file will be lost!

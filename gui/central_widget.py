@@ -29,9 +29,12 @@ class ParametersWidget(QtGui.QWidget, Ui_Form):
         
         self.go_browse.clicked.connect(self.load_go)
         self.ass_browse.clicked.connect(self.load_ass)
+        
         self.sig_run.clicked.connect(self.run_sig)
         self.cluster_run.clicked.connect(self.run_cluster)
+        self.clust_run_all.clicked.connect(self.clust_run_all_clicked)
         self.go_run.clicked.connect(self.run_go)
+        self.go_run_all.clicked.connect(self.go_run_all_clicked)
         
     def load_go(self):
         path, _ = QtGui.QFileDialog().getOpenFileName()
@@ -42,9 +45,22 @@ class ParametersWidget(QtGui.QWidget, Ui_Form):
         path, _ = QtGui.QFileDialog().getOpenFileName()
         self.a.ass_path = path
         self.ass_loaded = False
-
-    def run_sig(self):
+        
+    def clust_run_all_clicked(self):
         self.show_load.emit(True)
+        self.run_sig(False)
+        self.run_cluster(False)
+        self.show_load.emit(False)
+
+    def go_run_all_clicked(self):
+        self.show_load.emit(True)
+        self.run_sig(False)
+        self.run_cluster(False)
+        self.run_go(False)
+        self.show_load.emit(False)
+
+    def run_sig(self, emit=True):
+        if emit: self.show_load.emit(True)
         self.cluster_run.setEnabled(True)
         self.go_run.setEnabled(False)
         self.a.p_value = float(self.p_sig_a.text())
@@ -53,19 +69,19 @@ class ParametersWidget(QtGui.QWidget, Ui_Form):
         self.a.bin_size = int(self.bin_size_edit.text())
         self.a.find_significant()
         self.add_tab.emit(1)
-        self.show_load.emit(False)
+        if emit: self.show_load.emit(False)
         
-    def run_cluster(self):
-        self.show_load.emit(True)
+    def run_cluster(self, emit=True):
+        if emit: self.show_load.emit(True)
         self.go_run.setEnabled(True)
         self.a.distance_treshold = float(self.distance_edit.text())
         self.a.linkage = self.linkage_combo.currentText()
         self.a.cluster()
         self.add_tab.emit(2)
-        self.show_load.emit(False)
+        if emit: self.show_load.emit(False)
         
-    def run_go(self):
-        self.show_load.emit(True)
+    def run_go(self, emit=True):
+        if emit: self.show_load.emit(True)
         self.a.p_value_go = float(self.p_value_go_edit.text())
         self.a.ontology = self.go_combo.currentText() 
         if not self.db_loaded:
@@ -79,7 +95,7 @@ class ParametersWidget(QtGui.QWidget, Ui_Form):
         for _ in self.a.iterate_go_terms():
             QtGui.qApp.processEvents()
         self.add_tab.emit(3)
-        self.show_load.emit(False)
+        if emit: self.show_load.emit(False)
 
 
 class CentralWidget(QtGui.QWidget):
@@ -90,23 +106,6 @@ class CentralWidget(QtGui.QWidget):
         self.analysis = analysis
         self.set_up()
         self.set_up_menu()
-        self.set_up_load()
-        
-    def set_up_load(self):
-        self.load_gif_screen = QtGui.QLabel()
-        self.load_gif_screen.setSizePolicy(QtGui.QSizePolicy.Expanding, 
-            QtGui.QSizePolicy.Expanding)        
-        self.load_gif_screen.setAlignment(QtCore.Qt.AlignCenter) 
-        gif = QtGui.QMovie('gui/loading.gif', QtCore.QByteArray(), self) 
-        gif.setCacheMode(QtGui.QMovie.CacheAll) 
-        gif.setSpeed(100) 
-        self.load_gif_screen.setMovie(gif) 
-        gif.start()
-        self.load_widget = QtGui.QWidget(self)
-        self.load_widget.setLayout(QtGui.QHBoxLayout())
-        self.load_widget.hide()
-        self.load_widget.layout().addWidget(self.load_gif_screen)
-        self.layout().addWidget(self.load_widget)
         
     def set_up_menu(self):
         menubar = self.parent().menuBar()
@@ -136,11 +135,12 @@ class CentralWidget(QtGui.QWidget):
         # Corner search widget
         self.corner_widget = QtGui.QPushButton('Vind eiwit')
         self.corner_widget.clicked.connect(self.search_protein)
+        self.corner_widget.hide()
         self.tab_widget.setCornerWidget(self.corner_widget)
         
     def show_load(self, show):
-        self.tab_widget.setVisible(not show)
-        self.load_widget.setVisible(show)
+        self.setDisabled(show)
+        QtGui.qApp.processEvents()
         
     def tab_changed(self, index):
         self.corner_widget.hide()

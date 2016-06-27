@@ -6,6 +6,7 @@ class SearchDialog(QtGui.QDialog):
         super(SearchDialog, self).__init__(parent)
         self.analysis = analysis
         self.pg_id = None # ID of selected protein group
+        self.setWindowTitle('Vind eiwit')
         self.set_up()
 
     def set_up(self):
