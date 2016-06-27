@@ -2,11 +2,11 @@ import time
 
 from PySide import QtCore, QtGui
 
-from .significance_widget import SignificanceWidget
-from .clusters_widget import ClustersWidget
-from .go_widget import GOWidget
-from .parameters import Ui_Form
-from .search_dialog import SearchDialog
+from significance_widget import SignificanceWidget
+from clusters_widget import ClustersWidget
+from go_widget import GOWidget
+from parameters import Ui_Form
+from search_dialog import SearchDialog
 
 
 class ParametersWidget(QtGui.QWidget, Ui_Form):

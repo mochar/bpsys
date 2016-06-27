@@ -5,7 +5,7 @@ from PySide import QtCore, QtGui
 import pyqtgraph as pg
 import numpy as np
 
-from .models import PandasModel
+from models import PandasModel
      
 
 class Color(Enum):

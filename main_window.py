@@ -4,7 +4,7 @@ import re
 from PySide import QtCore, QtGui
 import pyqtgraph
 
-from .central_widget import CentralWidget
+from central_widget import CentralWidget
 
 
 class LoadProteinGroupsDialog(QtGui.QDialog):

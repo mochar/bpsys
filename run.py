@@ -3,7 +3,7 @@ import sys
 from PySide import QtGui
 import pyqtgraph as pg
 
-from gui.main_window import MainWindow
+from main_window import MainWindow
 from analysis import Analysis
 
 

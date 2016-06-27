@@ -8,7 +8,7 @@ import pyqtgraph as pg
 import numpy as np
 import matplotlib
 
-from .models import GOModel, TreeViewModel, TreeItem
+from models import GOModel, TreeViewModel, TreeItem
 
 
 class DefaultView(object):
