@@ -190,7 +190,7 @@ class MainWindow(QtGui.QMainWindow):
         self.analysis = analysis
         self.set_up()
         
-        self.setGeometry(300, 500, 850, 450)
+        self.resize(850, 450)
         self.setWindowTitle('Proteomics')
         self.show()
         

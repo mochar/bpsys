@@ -22,11 +22,6 @@ class ParametersWidget(QtGui.QWidget, Ui_Form):
         self.set_up()
         
     def set_up(self):
-        self.go_db_path.setText('/home/mochar/Documenten/school/bpsys/data/go/go-basic.obo')
-        self.a.database_path = self.go_db_path.text()
-        self.ass_path.setText('/home/mochar/Documenten/school/bpsys/data/go/gene_association.goa_human')
-        self.a.ass_path = self.ass_path.text()
-        
         self.go_browse.clicked.connect(self.load_go)
         self.ass_browse.clicked.connect(self.load_ass)
         
@@ -39,11 +34,13 @@ class ParametersWidget(QtGui.QWidget, Ui_Form):
     def load_go(self):
         path, _ = QtGui.QFileDialog().getOpenFileName()
         self.a.database_path = path
+        self.go_db_path.setText(path)
         self.db_loaded = False
         
     def load_ass(self):
         path, _ = QtGui.QFileDialog().getOpenFileName()
         self.a.ass_path = path
+        self.ass_path.setText(path)
         self.ass_loaded = False
         
     def clust_run_all_clicked(self):
